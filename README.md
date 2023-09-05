@@ -57,3 +57,9 @@ Feel free to open issues or submit pull requests. Your contributions are welcome
 
 ### License 📄
 This project is licensed under the MIT License - see the LICENSE.md file for details.
+
+### Next steps
+
+- Integrating the chatgpt prompt to generate script, title, hashtags and description
+
+- Integrating stable diffusion model so as to generate the entire video with only the prompt
