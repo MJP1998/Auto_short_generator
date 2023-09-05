@@ -39,15 +39,15 @@ One of the core philosophies behind this project is flexibility. We understand t
    git clone https://github.com/yourusername/your-repo-name.git
    ```
 2. Install the required packages:
-  ```bash
-  pip install -r requirements.txt
-  ```
+   ```bash
+   pip install -r requirements.txt
+   ```
 ### Usage
 Add your script and media files to the respective directories.
 Run the main script:
-  ```bash
-  python main.py
-  ```
+   ```bash
+   python main.py
+   ```
 
 ### Configuration 📁
 You can set up your own API keys and other private settings in config/settings_private.json.
