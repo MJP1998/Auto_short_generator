@@ -38,10 +38,10 @@ class VideoGeneration:
         video_audio = audio_object.overlay_audio(music_object)
         audio_clip = AudioFileClip(video_audio.file_path)
         # Calculate the duration each media should be displayed to match the audio length
-        audio_duration = audio_clip.duration  # Assuming audio is 44.1 kHz
+        audio_duration = audio_clip.duration + (fade_duration * (len(media_files) - 1)) # Assuming audio is 44.1 kHz
         # Initial estimate
         total_media_count = len(media_files)
-        media_duration = (audio_duration) / total_media_count
+        media_duration = audio_duration / total_media_count
         video_path2video = {}
         for video_file in video_files:
             video_path = os.path.join(self.media_folder, video_file)
@@ -68,6 +68,7 @@ class VideoGeneration:
                 break
 
             media_duration = updated_media_duration
+        print(media_duration)
 
         def shift_and_zoom(get_frame, t, max_shift_factor=0.18, max_zoom_factor=5, duration=10.0):
             """
@@ -193,22 +194,26 @@ class VideoGeneration:
             return video_clip
 
         clips = []
+        last_end = 0
+        clip_start = 0
         for i, media_path in enumerate(media_files):
             if media_path.lower().endswith(('.mp4', '.avi', '.mov')):
                 clip = process_video(media_path)
             else:
                 clip = process_image(media_path)
             if i > 0:
+                clip_start = last_end - fade_duration
                 # Make the first clip fade out
                 clips[-1] = clips[-1].crossfadeout(fade_duration)
                 # Make the second clip fade in
                 clip = clip.crossfadein(fade_duration)
                 # Shift the second clip's start time back by `fade_duration` to make it start fading in before the first clip ends
-                clip = clip.set_start(clips[-1].end - fade_duration)
+            clip = clip.set_start(clip_start)
+            last_end = clip_start + clip.duration
             clips.append(clip)
 
         # Concatenate all the clips together
-        final_clip = concatenate_videoclips(clips, method="compose")
+        final_clip = CompositeVideoClip(clips)
 
         # Resize the video
         final_clip = final_clip.resize(newsize=self.frame_size)

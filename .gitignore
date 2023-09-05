@@ -4,7 +4,7 @@ config/settings_private.json
 # Ignore resource files but keep the folders
 resources/audio_clips/*
 resources/videos/*
-resources/images/*
+resources/medias/*
 resources/musics/*
 
 # Ignore all .csv files
@@ -13,5 +13,5 @@ resources/musics/*
 # However, don't ignore .gitkeep files so that the folder structure remains
 !resources/audio_clips/.gitkeep
 !resources/videos/.gitkeep
-!resources/images/.gitkeep
+!resources/medias/.gitkeep
 !resources/musics/.gitkeep

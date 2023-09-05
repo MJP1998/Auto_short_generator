@@ -15,7 +15,7 @@
   },
   "directories": {
     "audio_dir": "resources/audio_clips/",
-    "image_dir": "resources/images/",
+    "image_dir": "resources/medias/",
     "video_dir": "resources/videos/",
     "music_dir": "resources/musics/",
     "aligned_dir": "resources/aligned_text"
