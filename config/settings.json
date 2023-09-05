@@ -1,0 +1,28 @@
+{
+  "api": {
+    "eleven_labs": {
+      "API_KEY": "",
+      "voice": "Rachel",
+      "model": "eleven_monolingual_v1"
+    }
+  },
+  "video_settings": {
+    "frame_size": [810, 1440],
+    "fps": 30
+  },
+  "directories": {
+    "audio_dir": "resources/audio_clips/",
+    "image_dir": "resources/images/",
+    "video_dir": "resources/videos/",
+    "music_dir": "resources/musics/",
+    "aligned_dir": "resources/aligned_text"
+  },
+  "input_files": {
+    "csv_path": "input.csv",
+    "is_header_row": false
+  },
+  "alignment_model": {
+    "acoustic_model_path": "",
+    "dict_model_path": ""
+  }
+}
