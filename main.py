@@ -9,7 +9,7 @@ from src.video_generator import VideoGeneration
 def main():
     # Read CSV
     config = Config()
-    csv_name = "nasa"
+    csv_name = "brooke"
     csv_reader = CSVReader(f"{csv_name}.csv")
     tts = TextToSpeech()
     video_generator = VideoGeneration(config.image_dir + f"{csv_name}/")

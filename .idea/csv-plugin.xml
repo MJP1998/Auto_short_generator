@@ -10,6 +10,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\brooke.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\endometriose.csv">
           <value>
             <Attribute>

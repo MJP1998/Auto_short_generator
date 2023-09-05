@@ -29,12 +29,14 @@ class Config:
     def __init__(self):
         try:
             settings = load_config()
-            self.elevenlabs_api_key = settings["api"]["elevenlabs"]["API_KEY"]
-            self.elevenlabs_voice = settings["api"]["elevenlabs"]["voice"]
-            self.elevenlabs_model = settings["api"]["elevenlabs"]["model"]
+            self.elevenlabs_api_key = settings["api"]["eleven_labs"]["API_KEY"]
+            self.elevenlabs_voice = settings["api"]["eleven_labs"]["voice"]
+            self.elevenlabs_model = settings["api"]["eleven_labs"]["model"]
 
             self.frame_size = tuple(settings["video_settings"]["frame_size"])
             self.fps = settings["video_settings"]["fps"]
+            self.subtitle_font = settings["video_settings"]["subtitle_font"]
+            self.subtitle_font_size = settings["video_settings"]["subtitle_font_size"]
 
             self.audio_dir = settings["directories"]["audio_dir"]
             self.image_dir = settings["directories"]["image_dir"]
