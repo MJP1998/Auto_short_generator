@@ -37,6 +37,7 @@ class Config:
             self.fps = settings["video_settings"]["fps"]
             self.subtitle_font = settings["video_settings"]["subtitle_font"]
             self.subtitle_font_size = settings["video_settings"]["subtitle_font_size"]
+            self.fade_duration = settings["video_settings"]["fade_duration"]
 
             self.audio_dir = settings["directories"]["audio_dir"]
             self.image_dir = settings["directories"]["image_dir"]
@@ -115,8 +116,11 @@ class Audio:
         if other_audio is None:
             return self
         # Make sure both audio segments have the same frame rate
+
         if self.get_sample_rate() != other_audio.get_sample_rate():
-            raise ValueError("Both audio segments must have the same frame rate for overlay.")
+            other_audio.audio_segment.set_frame_rate(self.audio_segment.frame_rate)
+
+            #raise ValueError("Both audio segments must have the same frame rate for overlay.")
 
         # Cut the second audio to the same length as the first
         other_audio_segment = other_audio.audio_segment[:len(self.audio_segment)]

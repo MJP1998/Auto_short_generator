@@ -47,7 +47,6 @@ class TextToSpeech:
         return Audio(audio_file_path, audio_data)
 
 
-
 if __name__ == "__main__":
     tts = TextToSpeech()
     script_sample = "Hello, this is a test script."

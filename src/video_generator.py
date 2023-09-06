@@ -28,14 +28,13 @@ class VideoGeneration:
     def generate_video(self, audio_object, script, title, music_object=None):
         # Get all files from the media folder
         all_files = os.listdir(self.media_folder)
-        fade_duration = 0.5
-
+        fade_duration = self.config.fade_duration
         media_files = sorted([f for f in all_files if f.lower().endswith(('.png', '.jpg', '.jpeg', '.mp4', '.avi',
                                                                           '.mov'))])
         video_files = [f for f in all_files if f.lower().endswith(('.mp4', '.avi', '.mov'))]
         image_files = [f for f in all_files if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
         # Set the audio of the video clip
-        video_audio = audio_object.overlay_audio(music_object)
+        video_audio = audio_object.overlay_audio(music_object, proportion1=0.9, proportion2=0.1)
         audio_clip = AudioFileClip(video_audio.file_path)
         # Calculate the duration each media should be displayed to match the audio length
         audio_duration = audio_clip.duration + (fade_duration * (len(media_files) - 1)) # Assuming audio is 44.1 kHz
@@ -68,7 +67,6 @@ class VideoGeneration:
                 break
 
             media_duration = updated_media_duration
-        print(media_duration)
 
         def shift_and_zoom(get_frame, t, max_shift_factor=0.18, max_zoom_factor=5, duration=10.0):
             """
@@ -131,7 +129,7 @@ class VideoGeneration:
                 # The video is too wide, need to add padding at the top and bottom
                 new_height = int(video_clip.size[0] / target_aspect_ratio)
                 padding = (new_height - video_clip.size[1]) // 2
-                padded_clip = video_clip.margin(top=int(padding * 1.2), bottom=int(padding * 0.8), color=(0, 0, 0))
+                padded_clip = video_clip.margin(top=int(padding * 1.3), bottom=int(padding * 0.7), color=(0, 0, 0))
             else:
                 video_clip = video_clip.resize(height=height)
                 # The video is too tall, need to add padding on the sides

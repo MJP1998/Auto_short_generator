@@ -10,8 +10,8 @@
     "frame_size": [810, 1440],
     "fps": 30,
     "subtitle_font": "Lucida-Bright-Demibold",
-    "subtitle_font_size": 110
-
+    "subtitle_font_size": 110,
+    "fade_duration": 0.5
   },
   "directories": {
     "audio_dir": "resources/audio_clips/",
