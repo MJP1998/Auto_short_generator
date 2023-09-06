@@ -1,4 +1,6 @@
 import os
+import queue
+from collections import defaultdict
 
 import cv2
 
@@ -11,10 +13,57 @@ from moviepy.video.VideoClip import TextClip
 
 from src.utils import Config, Audio  # Import the Config class from utils module
 import pyfoal
+import re
 
 
 def get_alignement(text, audio_object):
     return pyfoal.align(text, audio_object.get_audio_np_array(), audio_object.get_sample_rate()).json()
+
+
+def create_index_mapping(cleaned_text, original_text):
+    mapping = {}
+    j = 0
+    for i in range(len(cleaned_text)):
+        while j < len(original_text) and original_text[j] != cleaned_text[i]:
+            j += 1
+        if j < len(original_text):
+            mapping[i] = j
+            j += 1
+    return mapping
+
+def match_aligned_words_to_text(filtered_aligned_words, original_text):
+    # Initialize a dictionary to hold the resulting matched words
+    word_aligned2text = defaultdict(queue.Queue)
+    cleaned_text = re.sub(r"[’'\-_/\\%^$*&éù£¨;àç(_ç'è\"=)—]", "", original_text)
+    mapping = create_index_mapping(cleaned_text, original_text)
+    # Initialize the search start position to 0
+    start_pos = 0
+    current_word = filtered_aligned_words[0]['alignedWord'].lower()
+    for i in range(len(filtered_aligned_words) - 1):
+        next_word = filtered_aligned_words[i + 1]['alignedWord'].lower()
+        # Create a pattern that starts with the current word and captures all characters until the next word
+        pattern = re.compile(r'{}(.*?)(?={})'.format(re.escape(current_word), re.escape(next_word)), re.DOTALL)
+
+        # Search for the pattern in the original text starting from start_pos
+        match = pattern.search(cleaned_text.lower(), start_pos)
+        if match:
+            # If a match is found, capture the full matched portion from the original text
+            start, end = match.span()
+            matched_text = original_text[mapping[start]:mapping[end]]
+            word_aligned2text[current_word].put(matched_text)
+
+            # Update start_pos for the next search
+            start_pos = end
+        else:
+            print(current_word, next_word, original_text[start_pos:])
+        current_word = next_word
+
+    # Handling the last word separately to capture any trailing content
+    last_word = next_word
+    matched_text = original_text[start_pos:]
+    word_aligned2text[last_word].put(matched_text.strip())
+
+    return word_aligned2text
 
 
 class VideoGeneration:
@@ -37,7 +86,7 @@ class VideoGeneration:
         video_audio = audio_object.overlay_audio(music_object, proportion1=0.9, proportion2=0.1)
         audio_clip = AudioFileClip(video_audio.file_path)
         # Calculate the duration each media should be displayed to match the audio length
-        audio_duration = audio_clip.duration + (fade_duration * (len(media_files) - 1)) # Assuming audio is 44.1 kHz
+        audio_duration = audio_clip.duration + (fade_duration * (len(media_files) - 1))  # Assuming audio is 44.1 kHz
         # Initial estimate
         total_media_count = len(media_files)
         media_duration = audio_duration / total_media_count
@@ -219,7 +268,7 @@ class VideoGeneration:
         audio_clip = audio_clip.set_duration(final_clip.duration)
         final_clip = final_clip.set_audio(audio_clip)
         # Overlay subtitles
-        final_clip = self.overlay_subtitles(final_clip, get_alignement(script, audio_object))
+        final_clip = self.overlay_subtitles(final_clip, get_alignement(script, audio_object), script)
 
         # Save the video
         video_file_path = os.path.join(self.video_dir, title + ".mp4")
@@ -229,7 +278,7 @@ class VideoGeneration:
 
         return video_file_path
 
-    def overlay_subtitles(self, final_clip, alignment):
+    def overlay_subtitles(self, final_clip, alignment, script):
         clips_with_subtitles = []
         current_group = []
         last_end_time = 0
@@ -237,18 +286,19 @@ class VideoGeneration:
         font_size = int(self.config.subtitle_font_size * final_clip.h / 1980)
         font = self.config.subtitle_font
         time_threshold = 0.5
-        vertical_pos = final_clip.h // 4
+        vertical_pos = final_clip.h // 3
         horizontal_pos = final_clip.w // 2
         length_str = 0
 
         filtered_words = [word for word in alignment['words'] if word['alignedWord'] != 'sp']
+        aligned_word2text = match_aligned_words_to_text(filtered_words, script)
 
         for word in filtered_words:
             if last_end_time - first_start_time > 0.7 or length_str + len(word['alignedWord']) > 10 or (
                     current_group and word['start'] - last_end_time > time_threshold):
                 start_time = current_group[0]['start']
                 end_time = word['start']
-                subtitle_text = " ".join([w['alignedWord'] for w in current_group])
+                subtitle_text = " ".join([aligned_word2text[w['alignedWord'].lower()].get() for w in current_group])
                 length_str = 0
                 subtitle_clip = TextClip(subtitle_text, fontsize=font_size, color='white', font=font)
                 subtitle_clip = subtitle_clip.set_position(
@@ -277,7 +327,7 @@ class VideoGeneration:
             start_time = current_group[0]['start']
 
             end_time = final_clip.duration
-            subtitle_text = " ".join([w['alignedWord'] for w in current_group])
+            subtitle_text = " ".join([aligned_word2text[w['alignedWord'].lower()].get() for w in current_group])
             subtitle_clip = TextClip(subtitle_text, fontsize=font_size, color='white', font=font)
             subtitle_clip = subtitle_clip.set_position(
                 (horizontal_pos - subtitle_clip.w // 2, vertical_pos - subtitle_clip.h // 2))
