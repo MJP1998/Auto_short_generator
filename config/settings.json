@@ -11,8 +11,10 @@
     "fps": 30,
     "subtitle_font": "Lucida-Bright-Demibold",
     "_comment_subtitle_y_pos": "give the proportion of the screen from the top",
-    "subtitle_y_pos": 0.35,
-    "subtitle_font_size": 110,
+    "subtitle_y_pos": 0.6,
+    "subtitle_nb_word": 4,
+    "subtitle_nb_word_per_line": 4,
+    "subtitle_font_size": 250,
     "fade_duration": 0.5
   },
   "directories": {

@@ -4,7 +4,7 @@ from collections import defaultdict
 
 import cv2
 
-from moviepy.editor import ImageSequenceClip, concatenate_videoclips, AudioFileClip
+from moviepy.editor import ImageSequenceClip, AudioFileClip
 from moviepy.editor import CompositeVideoClip
 from moviepy.video.fx import all as vfx
 from moviepy.editor import VideoFileClip
@@ -243,6 +243,8 @@ class VideoGeneration:
         clips = []
         last_end = 0
         clip_start = 0
+
+        # TODO: a Media class in which we can add transitions and processing easily
         for i, media_path in enumerate(media_files):
             if media_path.lower().endswith(('.mp4', '.avi', '.mov')):
                 clip = process_video(media_path)
@@ -283,66 +285,86 @@ class VideoGeneration:
         current_group = []
         last_end_time = 0
         first_start_time = 0
-        font_size = int(self.config.subtitle_font_size * final_clip.h / 1980)
+        font_size = self.config.subtitle_font_size
+        # adapt the font_size to the resolution
+        font_size = int(font_size * final_clip.h / 1980)
+        # adapt the font_size for the nb of words per line
+        font_size = int(font_size / self.config.subtitle_nb_word_per_line)
+
         font = self.config.subtitle_font
-        time_threshold = 0.5
+        time_threshold = 0.3
         vertical_pos = final_clip.h * self.config.subtitle_pos
         horizontal_pos = final_clip.w // 2
         length_str = 0
+        line_height_offset = font_size * 1.3
+        shadow_offset = int(5 * final_clip.h / 1980)
+
+        def group_subtitles_by_lines(word_group: list[dict], max_words_per_line: int) -> list[list[dict]]:
+            return [word_group[i:i + max_words_per_line] for i in range(0, len(word_group), max_words_per_line)]
 
         filtered_words = [word for word in alignment['words'] if word['alignedWord'] != 'sp']
         aligned_word2text = match_aligned_words_to_text(filtered_words, script)
 
         for word in filtered_words:
-            if last_end_time - first_start_time > 0.7 or length_str + len(word['alignedWord']) > 10 or (
-                    current_group and word['start'] - last_end_time > time_threshold):
+            if (length_str + len(word['alignedWord']) > 5 * self.config.subtitle_nb_word)\
+                    or (current_group and word['start'] - last_end_time > time_threshold):
+
+                lines = group_subtitles_by_lines(current_group, self.config.subtitle_nb_word_per_line)
+                current_vertical_pos = vertical_pos
                 start_time = current_group[0]['start']
                 end_time = word['start']
-                subtitle_text = " ".join([aligned_word2text[w['alignedWord'].lower()].get() for w in current_group])
-                length_str = 0
-                subtitle_clip = TextClip(subtitle_text, fontsize=font_size, color='white', font=font)
-                subtitle_clip = subtitle_clip.set_position(
-                    (horizontal_pos - subtitle_clip.w // 2, vertical_pos - subtitle_clip.h // 2))
-                # Shadow text
-                shadow_offset = int(5 * final_clip.h / 1980)
-                shadow_clip = TextClip(subtitle_text, fontsize=font_size, color='black', font=font)
-                shadow_clip.get_frame(0)
 
-                shadow_clip = shadow_clip.set_position((horizontal_pos - subtitle_clip.w // 2 + shadow_offset,
-                                                        vertical_pos + shadow_offset - subtitle_clip.h // 2))
-                shadow_clip = shadow_clip.fx(vfx.colorx, 0.7)
+                for line in lines:
+                    subtitle_text = " ".join([aligned_word2text[w['alignedWord'].lower()].get() for w in line])
+                    subtitle_clip = TextClip(subtitle_text, fontsize=font_size, color='white', font=font)
+                    subtitle_clip = subtitle_clip.set_position(
+                        (horizontal_pos - subtitle_clip.w // 2, current_vertical_pos - subtitle_clip.h // 2))
+                    # Shadow text
+                    shadow_clip = TextClip(subtitle_text, fontsize=font_size, color='black', font=font)
+                    shadow_clip.get_frame(0)
 
-                subtitle_clip = subtitle_clip.set_start(start_time).set_end(end_time)
-                shadow_clip = shadow_clip.set_start(start_time).set_end(end_time)
+                    shadow_clip = shadow_clip.set_position((horizontal_pos - subtitle_clip.w // 2 + shadow_offset,
+                                                            current_vertical_pos + shadow_offset - subtitle_clip.h // 2))
+                    shadow_clip = shadow_clip.fx(vfx.colorx, 0.7)
 
-                clips_with_subtitles.extend([shadow_clip, subtitle_clip])
+                    subtitle_clip = subtitle_clip.set_start(start_time).set_end(end_time)
+                    shadow_clip = shadow_clip.set_start(start_time).set_end(end_time)
+                    clips_with_subtitles.extend([shadow_clip, subtitle_clip])
+                    current_vertical_pos += line_height_offset
+
                 first_start_time = word['start']
                 current_group = []
+                length_str = 0
 
             current_group.append(word)
             length_str += len(word['alignedWord']) + 1
             last_end_time = word['end']
 
         if current_group:
+            lines = group_subtitles_by_lines(current_group, self.config.subtitle_nb_word_per_line)
+            current_vertical_pos = vertical_pos
             start_time = current_group[0]['start']
-
             end_time = final_clip.duration
-            subtitle_text = " ".join([aligned_word2text[w['alignedWord'].lower()].get() for w in current_group])
-            subtitle_clip = TextClip(subtitle_text, fontsize=font_size, color='white', font=font)
-            subtitle_clip = subtitle_clip.set_position(
-                (horizontal_pos - subtitle_clip.w // 2, vertical_pos - subtitle_clip.h // 2))
-            # Shadow text
-            shadow_offset = int(5 * final_clip.h / 1980)
-            shadow_clip = TextClip(subtitle_text, fontsize=font_size, color='black', font=font).set_position(
-                lambda t: (
-                    (final_clip.w - subtitle_clip.w) // 2 + shadow_offset,
-                    vertical_pos + shadow_offset - subtitle_clip.h // 2))
-            shadow_clip = shadow_clip.fx(vfx.colorx, 0.7)
 
-            subtitle_clip = subtitle_clip.set_start(start_time).set_end(end_time)
-            shadow_clip = shadow_clip.set_start(start_time).set_end(end_time)
+            for line in lines:
+                subtitle_text = " ".join([aligned_word2text[w['alignedWord'].lower()].get() for w in line])
+                subtitle_clip = TextClip(subtitle_text, fontsize=font_size, color='white', font=font)
+                subtitle_clip = subtitle_clip.set_position(
+                    (horizontal_pos - subtitle_clip.w // 2, current_vertical_pos - subtitle_clip.h // 2))
+                # Shadow text
+                shadow_clip = TextClip(subtitle_text, fontsize=font_size, color='black', font=font)
+                shadow_clip.get_frame(0)
 
-            clips_with_subtitles.extend([shadow_clip, subtitle_clip])
+                shadow_clip = shadow_clip.set_position((horizontal_pos - subtitle_clip.w // 2 + shadow_offset,
+                                                        current_vertical_pos + shadow_offset - subtitle_clip.h // 2))
+                shadow_clip = shadow_clip.fx(vfx.colorx, 0.7)
+
+                subtitle_clip = subtitle_clip.set_start(start_time).set_end(end_time)
+                shadow_clip = shadow_clip.set_start(start_time).set_end(end_time)
+
+                clips_with_subtitles.extend([shadow_clip, subtitle_clip])
+                current_vertical_pos += line_height_offset
+
 
         final_clip = CompositeVideoClip([final_clip] + clips_with_subtitles)
         return final_clip
