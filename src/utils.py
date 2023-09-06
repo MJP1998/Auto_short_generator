@@ -35,6 +35,7 @@ class Config:
 
             self.frame_size = tuple(settings["video_settings"]["frame_size"])
             self.fps = settings["video_settings"]["fps"]
+            self.subtitle_pos = settings["video_settings"]["subtitle_y_pos"]
             self.subtitle_font = settings["video_settings"]["subtitle_font"]
             self.subtitle_font_size = settings["video_settings"]["subtitle_font_size"]
             self.fade_duration = settings["video_settings"]["fade_duration"]

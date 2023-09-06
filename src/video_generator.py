@@ -286,7 +286,7 @@ class VideoGeneration:
         font_size = int(self.config.subtitle_font_size * final_clip.h / 1980)
         font = self.config.subtitle_font
         time_threshold = 0.5
-        vertical_pos = final_clip.h // 3
+        vertical_pos = final_clip.h * self.config.subtitle_pos
         horizontal_pos = final_clip.w // 2
         length_str = 0
 
