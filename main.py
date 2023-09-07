@@ -21,9 +21,7 @@ def main():
         music_file_path = os.path.join(config.music_dir, f"1.mp3")
         music_object = Audio(music_file_path)
 
-        video_file_path = video_generator.generate_video(audio_object, video.script, csv_name, music_object)
-
-        print(f"Generated video saved at {video_file_path}")
+        video_file_path = video_generator.generate_video(audio_object, video.script, video.title, csv_name, music_object)
 
         # (Optional) Upload video to a platform
         # upload_video(video_path)
