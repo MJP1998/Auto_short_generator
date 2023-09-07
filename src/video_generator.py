@@ -2,9 +2,7 @@ import os
 import queue
 from collections import defaultdict
 
-import cv2
-
-from moviepy.editor import ImageSequenceClip, AudioFileClip
+from moviepy.editor import AudioFileClip
 from moviepy.editor import CompositeVideoClip
 from moviepy.video.fx import all as vfx
 from moviepy.editor import VideoFileClip
