@@ -11,6 +11,7 @@ from moviepy.editor import VideoFileClip
 
 from moviepy.video.VideoClip import TextClip
 
+from src.media import Media
 from src.utils import Config, Audio  # Import the Config class from utils module
 import pyfoal
 import re
@@ -30,6 +31,7 @@ def create_index_mapping(cleaned_text, original_text):
             mapping[i] = j
             j += 1
     return mapping
+
 
 def match_aligned_words_to_text(filtered_aligned_words, original_text):
     # Initialize a dictionary to hold the resulting matched words
@@ -78,8 +80,8 @@ class VideoGeneration:
         # Get all files from the media folder
         all_files = os.listdir(self.media_folder)
         fade_duration = self.config.fade_duration
-        media_files = sorted([f for f in all_files if f.lower().endswith(('.png', '.jpg', '.jpeg', '.mp4', '.avi',
-                                                                          '.mov'))])
+        media_files = sorted([f for f in all_files if f.lower().endswith(('.png', '.jpg', '.jpeg',
+                                                                          '.mp4', '.avi', '.mov'))])
         video_files = [f for f in all_files if f.lower().endswith(('.mp4', '.avi', '.mov'))]
         image_files = [f for f in all_files if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
         # Set the audio of the video clip
@@ -95,6 +97,7 @@ class VideoGeneration:
             video_path = os.path.join(self.media_folder, video_file)
             video_clip = VideoFileClip(video_path)
             video_path2video[video_file] = video_clip
+
         while True:
             total_video_duration = 0
             video_with_more_time = 0
@@ -117,156 +120,29 @@ class VideoGeneration:
 
             media_duration = updated_media_duration
 
-        def shift_and_zoom(get_frame, t, max_shift_factor=0.18, max_zoom_factor=5, duration=10.0):
-            """
-            Shifts the center of the frame towards the top and zoom into it,
-            based on the time t in the video.
-
-            :param get_frame: Function to get the current frame at time t
-            :param t: Current time in the video
-            :param max_shift_factor: Maximum factor by which to shift the center towards the top
-            :param max_zoom_factor: Maximum factor by which to zoom the frame
-            :param duration: Duration of the video clip
-            :return: Shifted and zoomed frame
-            """
-
-            frame = get_frame(t)
-
-            height, width, _ = frame.shape
-
-            # Calculate shift and zoom factors based on time
-            shift_factor = max_shift_factor * (t / duration)
-            zoom_factor = 1 + ((max_zoom_factor - 1) * (t / duration))
-
-            # Calculate the amount to shift
-            shift_amount = int(height * shift_factor)
-
-            # Perform the shift using UMat
-            shifted_frame_umat = cv2.UMat(frame[shift_amount:, :, :])
-            shifted_frame_umat = cv2.copyMakeBorder(shifted_frame_umat, 0, shift_amount, 0, 0, cv2.BORDER_CONSTANT,
-                                                    value=[0, 0, 0])
-
-            # Calculate new size for zoom
-            new_width = width * zoom_factor
-            new_height = height * zoom_factor
-
-            # Perform zoom
-            zoomed_frame_umat = cv2.resize(shifted_frame_umat, (round(new_width), round(new_height)))
-
-            # Calculate top and left positions for cropping
-            top = int((new_height - height) / 2)
-            left = int((new_width - width) / 2)
-
-            # Crop to original frame size
-            zoomed_frame = zoomed_frame_umat.get()[top:top + height, left:left + width]
-
-            return zoomed_frame
-
-        def pad_video_to_aspect_ratio(video_clip, width, height):
-            """
-            Pad the video to a specific aspect ratio.
-
-            :param video_clip: The original video clip
-            :param target_aspect_ratio: The target aspect ratio (width / height)
-            :return: A new video clip with padding
-            """
-            target_aspect_ratio = width / height
-            current_aspect_ratio = video_clip.size[0] / video_clip.size[1]
-
-            if current_aspect_ratio > target_aspect_ratio:
-                video_clip = video_clip.resize(width=width)
-                # The video is too wide, need to add padding at the top and bottom
-                new_height = int(video_clip.size[0] / target_aspect_ratio)
-                padding = (new_height - video_clip.size[1]) // 2
-                padded_clip = video_clip.margin(top=int(padding * 1.3), bottom=int(padding * 0.7), color=(0, 0, 0))
-            else:
-                video_clip = video_clip.resize(height=height)
-                # The video is too tall, need to add padding on the sides
-                new_width = int(video_clip.size[1] * target_aspect_ratio)
-                padding = (new_width - video_clip.size[0]) // 2
-                padded_clip = video_clip.margin(left=padding, right=padding, color=(0, 0, 0))
-
-            return padded_clip
-
-        # Handle images first
-        def process_image(img_file):
-            img_path = os.path.join(self.media_folder, img_file)
-            clip = ImageSequenceClip([img_path], fps=self.fps, durations=[media_duration])
-
-            clip_width, clip_height = clip.size
-            frame_width, frame_height = self.frame_size
-
-            target_aspect_ratio = frame_width / frame_height
-            current_aspect_ratio = clip_width / clip_height
-
-            if current_aspect_ratio > target_aspect_ratio:
-                final_height_frame = int(clip_width / target_aspect_ratio)
-                height_ratio = 1.1 * final_height_frame / clip_height
-            else:
-                final_width_frame = int(clip_height / target_aspect_ratio)
-                height_ratio = 1.1 * final_width_frame / clip_width
-            clip = pad_video_to_aspect_ratio(clip, self.frame_size[0], self.frame_size[1])
-
-            clip = clip.fl(
-                lambda gf, t: shift_and_zoom(gf, t, max_zoom_factor=height_ratio, duration=media_duration * 1.2))
-
-            # Set the duration of each image in the video clip
-            clip = clip.set_duration(media_duration)
-
-            # Add fade transition
-            return clip
-
-        def process_video(video_path):
-            video = video_path2video[video_path]
-            video_clip = video.set_duration(
-                min(media_duration, video.duration))  # Take the first 'media_duration' seconds
-            # Calculate new height while maintaining aspect ratio
-            video_clip = video_clip.without_audio()  # Remove audio
-            clip_width, clip_height = video_clip.size
-            frame_width, frame_height = self.frame_size
-
-            target_aspect_ratio = frame_width / frame_height
-            current_aspect_ratio = clip_width / clip_height
-
-            if current_aspect_ratio > target_aspect_ratio:
-                final_height_frame = int(clip_width / target_aspect_ratio)
-                height_ratio = 1.1 * final_height_frame / clip_height
-            else:
-                final_width_frame = int(clip_height / target_aspect_ratio)
-                height_ratio = 1.1 * final_width_frame / clip_width
-
-            video_clip = pad_video_to_aspect_ratio(video_clip, self.frame_size[0], self.frame_size[1])
-            video_clip = video_clip.fl(
-                lambda gf, t: shift_and_zoom(gf, t, max_zoom_factor=height_ratio, duration=video_clip.duration * 1.2))
-            return video_clip
-
         clips = []
         last_end = 0
         clip_start = 0
-
-        # TODO: a Media class in which we can add transitions and processing easily
         for i, media_path in enumerate(media_files):
-            if media_path.lower().endswith(('.mp4', '.avi', '.mov')):
-                clip = process_video(media_path)
-            else:
-                clip = process_image(media_path)
+            media = Media(media_path, media_duration,
+                          video_path2video[media_path] if media_path in video_path2video else None)
+            media.set_duration(media_duration)
+            if i != len(media_files) - 1:
+                # Make the first clip fade out
+                media.add_transition("crossfadeout", fade_duration)
             if i > 0:
                 clip_start = last_end - fade_duration
-                # Make the first clip fade out
-                clips[-1] = clips[-1].crossfadeout(fade_duration)
                 # Make the second clip fade in
-                clip = clip.crossfadein(fade_duration)
-                # Shift the second clip's start time back by `fade_duration` to make it start fading in before the first clip ends
-            clip = clip.set_start(clip_start)
-            last_end = clip_start + clip.duration
-            clips.append(clip)
-
+                media.add_transition("crossfadein", fade_duration)
+            # Shift the second clip's start time back by `fade_duration` to make it
+            # start fading in before the first clip ends
+            media.set_start(clip_start)
+            last_end = clip_start + media.get_duration()
+            clips.append(media.clip)
         # Concatenate all the clips together
         final_clip = CompositeVideoClip(clips)
-
         # Resize the video
         final_clip = final_clip.resize(newsize=self.frame_size)
-
         audio_clip = audio_clip.set_duration(final_clip.duration)
         final_clip = final_clip.set_audio(audio_clip)
         # Overlay subtitles
@@ -275,7 +151,6 @@ class VideoGeneration:
         # Save the video
         video_file_path = os.path.join(self.video_dir, title + ".mp4")
         final_clip.fps = self.fps
-
         final_clip.write_videofile(video_file_path, codec="libx264", preset="ultrafast", fps=10, bitrate="500k")
 
         return video_file_path
@@ -306,7 +181,7 @@ class VideoGeneration:
         aligned_word2text = match_aligned_words_to_text(filtered_words, script)
 
         for word in filtered_words:
-            if (length_str + len(word['alignedWord']) > 5 * self.config.subtitle_nb_word)\
+            if (length_str + len(word['alignedWord']) > 5 * self.config.subtitle_nb_word) \
                     or (current_group and word['start'] - last_end_time > time_threshold):
 
                 lines = group_subtitles_by_lines(current_group, self.config.subtitle_nb_word_per_line)
@@ -364,7 +239,6 @@ class VideoGeneration:
 
                 clips_with_subtitles.extend([shadow_clip, subtitle_clip])
                 current_vertical_pos += line_height_offset
-
 
         final_clip = CompositeVideoClip([final_clip] + clips_with_subtitles)
         return final_clip

@@ -14,7 +14,7 @@
     "subtitle_y_pos": 0.6,
     "subtitle_nb_word": 4,
     "subtitle_nb_word_per_line": 4,
-    "subtitle_font_size": 250,
+    "subtitle_font_size": 350,
     "fade_duration": 0.5
   },
   "directories": {
