@@ -35,12 +35,21 @@ class Config:
 
             self.frame_size = tuple(settings["video_settings"]["frame_size"])
             self.fps = settings["video_settings"]["fps"]
+            self.music_proportion = settings["video_settings"]["music_proportion"]
+
             self.subtitle_pos = settings["video_settings"]["subtitle_y_pos"]
             self.subtitle_nb_word = settings["video_settings"]["subtitle_nb_word"]
             self.subtitle_nb_word_per_line = settings["video_settings"]["subtitle_nb_word_per_line"]
             self.subtitle_font = settings["video_settings"]["subtitle_font"]
             self.subtitle_font_size = settings["video_settings"]["subtitle_font_size"]
             self.fade_duration = settings["video_settings"]["fade_duration"]
+
+            self.show_title = settings["video_settings"]["show_title"]
+            self.time_title = settings["video_settings"]["time_title"]
+            self.background_title = tuple(map(int, settings["video_settings"]["background_title"].split(',')))
+            self.background_title_opacity = settings["video_settings"]["background_title_opacity"]
+            self.color_title = settings["video_settings"]["color_title"]
+            self.title_nb_word_per_line = settings["video_settings"]["title_nb_word_per_line"]
 
             self.audio_dir = settings["directories"]["audio_dir"]
             self.image_dir = settings["directories"]["image_dir"]
@@ -55,7 +64,7 @@ class Config:
             self.dict_model_path = settings["alignment_model"]["dict_model_path"]
 
         except FileNotFoundError:
-            print(f"Configuration file {config_file} not found.")
+            print(f"Configuration file not found.")
         except KeyError as e:
             print(f"Missing key in configuration file: {e}")
         except Exception as e:

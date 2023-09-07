@@ -58,7 +58,7 @@ class Media:
     def shift_and_zoom(self, zoom=True, shift=True):
         clip_width, clip_height = self.final_clip_frame_size
         frame_width, frame_height = self.clip.size
-        max_shift_factor = 0.18 if shift else 0
+        max_shift_factor = 0.15 if shift else 0
 
         target_aspect_ratio = frame_width / frame_height
         current_aspect_ratio = clip_width / clip_height

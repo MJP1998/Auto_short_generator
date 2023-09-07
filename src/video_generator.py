@@ -7,7 +7,7 @@ from moviepy.editor import CompositeVideoClip
 from moviepy.video.fx import all as vfx
 from moviepy.editor import VideoFileClip
 
-from moviepy.video.VideoClip import TextClip
+from moviepy.video.VideoClip import TextClip, ColorClip
 
 from src.media import Media
 from src.utils import Config, Audio  # Import the Config class from utils module
@@ -39,6 +39,7 @@ def match_aligned_words_to_text(filtered_aligned_words, original_text):
     # Initialize the search start position to 0
     start_pos = 0
     current_word = filtered_aligned_words[0]['alignedWord'].lower()
+
     for i in range(len(filtered_aligned_words) - 1):
         next_word = filtered_aligned_words[i + 1]['alignedWord'].lower()
         # Create a pattern that starts with the current word and captures all characters until the next word
@@ -49,13 +50,13 @@ def match_aligned_words_to_text(filtered_aligned_words, original_text):
         if match:
             # If a match is found, capture the full matched portion from the original text
             start, end = match.span()
-            matched_text = original_text[mapping[start]:mapping[end]]
+            matched_text = original_text[mapping[start_pos]:mapping[end]]
             word_aligned2text[current_word].put(matched_text)
 
             # Update start_pos for the next search
             start_pos = end
-        else:
-            print(current_word, next_word, original_text[start_pos:])
+
+
         current_word = next_word
 
     # Handling the last word separately to capture any trailing content
@@ -74,7 +75,7 @@ class VideoGeneration:
         self.media_folder = media_folder if media_folder is not None else self.config.image_dir
         self.fps = self.config.fps
 
-    def generate_video(self, audio_object, script, title, music_object=None):
+    def generate_video(self, audio_object, script, title, filename, music_object=None):
         # Get all files from the media folder
         all_files = os.listdir(self.media_folder)
         fade_duration = self.config.fade_duration
@@ -83,7 +84,10 @@ class VideoGeneration:
         video_files = [f for f in all_files if f.lower().endswith(('.mp4', '.avi', '.mov'))]
         image_files = [f for f in all_files if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
         # Set the audio of the video clip
-        video_audio = audio_object.overlay_audio(music_object, proportion1=0.9, proportion2=0.1)
+        video_audio = audio_object.overlay_audio(music_object,
+                                                 proportion1=1-self.config.music_proportion,
+                                                 proportion2=self.config.music_proportion)
+
         audio_clip = AudioFileClip(video_audio.file_path)
         # Calculate the duration each media should be displayed to match the audio length
         audio_duration = audio_clip.duration + (fade_duration * (len(media_files) - 1))  # Assuming audio is 44.1 kHz
@@ -144,16 +148,16 @@ class VideoGeneration:
         audio_clip = audio_clip.set_duration(final_clip.duration)
         final_clip = final_clip.set_audio(audio_clip)
         # Overlay subtitles
-        final_clip = self.overlay_subtitles(final_clip, get_alignement(script, audio_object), script)
+        final_clip = self.overlay_subtitles(final_clip, get_alignement(script, audio_object), script, title)
 
         # Save the video
-        video_file_path = os.path.join(self.video_dir, title + ".mp4")
+        video_file_path = os.path.join(self.video_dir, filename + ".mp4")
         final_clip.fps = self.fps
         final_clip.write_videofile(video_file_path, codec="libx264", preset="ultrafast", fps=10, bitrate="500k")
 
         return video_file_path
 
-    def overlay_subtitles(self, final_clip, alignment, script):
+    def overlay_subtitles(self, final_clip, alignment, script, title):
         clips_with_subtitles = []
         current_group = []
         last_end_time = 0
@@ -162,6 +166,7 @@ class VideoGeneration:
         # adapt the font_size to the resolution
         font_size = int(font_size * final_clip.h / 1980)
         # adapt the font_size for the nb of words per line
+        title_font_size = int(font_size*1.2/self.config.title_nb_word_per_line)
         font_size = int(font_size / self.config.subtitle_nb_word_per_line)
 
         font = self.config.subtitle_font
@@ -175,20 +180,68 @@ class VideoGeneration:
         def group_subtitles_by_lines(word_group: list[dict], max_words_per_line: int) -> list[list[dict]]:
             return [word_group[i:i + max_words_per_line] for i in range(0, len(word_group), max_words_per_line)]
 
+        # handle title
+        if self.config.show_title:
+            current_vertical_pos = vertical_pos
+            title_lines = group_subtitles_by_lines(title.split(" "), self.config.title_nb_word_per_line)
+            for line in title_lines:
+                title_text = " ".join(line)
+                title_clip = TextClip(title_text, fontsize=title_font_size, color=self.config.color_title, font=font)
+                title_clip = title_clip.set_position(
+                    (horizontal_pos - title_clip.w // 2, current_vertical_pos - title_clip.h // 2))
+                # Shadow text
+                shadow_clip = TextClip(title_text, fontsize=title_font_size, color='black', font=font)
+                shadow_clip.get_frame(0)
+
+                shadow_clip = shadow_clip.set_position((horizontal_pos - title_clip.w // 2 + shadow_offset,
+                                                        current_vertical_pos + shadow_offset - title_clip.h // 2))
+                shadow_clip = shadow_clip.fx(vfx.colorx, 0.7)
+
+                title_clip = title_clip.set_start(0).set_end(self.config.time_title)
+                shadow_clip = shadow_clip.set_start(0).set_end(self.config.time_title)
+
+                # Create a black background with the same size as subtitle_clip
+                bg_clip = ColorClip(size=title_clip.size, color=self.config.background_title)
+
+                # Set the opacity of the background to 0.4
+                bg_clip = bg_clip.set_opacity(max(0., min(1., float(self.config.background_title_opacity))))
+
+                # Set the duration and start/end time of the background to match subtitle_clip
+                bg_clip = bg_clip.set_duration(title_clip.duration)
+                bg_clip = bg_clip.set_start(0).set_end(self.config.time_title)
+
+                # Position the background
+                bg_clip = bg_clip.set_position((horizontal_pos - title_clip.w // 2,
+                                                current_vertical_pos - title_clip.h // 2))
+
+                clips_with_subtitles.extend([bg_clip, shadow_clip, title_clip])
+                current_vertical_pos += line_height_offset
+
         filtered_words = [word for word in alignment['words'] if word['alignedWord'] != 'sp']
         aligned_word2text = match_aligned_words_to_text(filtered_words, script)
-
         for word in filtered_words:
             if (length_str + len(word['alignedWord']) > 5 * self.config.subtitle_nb_word) \
                     or (current_group and word['start'] - last_end_time > time_threshold):
 
                 lines = group_subtitles_by_lines(current_group, self.config.subtitle_nb_word_per_line)
-                current_vertical_pos = vertical_pos
                 start_time = current_group[0]['start']
-                end_time = word['start']
+                current_vertical_pos = vertical_pos
+                if start_time < self.config.time_title and self.config.show_title:
+                    if abs(0.5 - self.config.subtitle_pos) < 0.1:
+                        current_vertical_pos = 0.7 * final_clip.h
+                    else:
+                        current_vertical_pos = final_clip.g - vertical_pos
 
+                end_time = word['start']
                 for line in lines:
-                    subtitle_text = " ".join([aligned_word2text[w['alignedWord'].lower()].get() for w in line])
+                    line = [w for w in line if w['alignedWord'].lower() in aligned_word2text]
+                    if not line:
+                        continue
+                    subtitle_text = " ".join([aligned_word2text[w['alignedWord'].lower()].get() for w in line
+                                              if not aligned_word2text[w['alignedWord'].lower()].empty()])
+                    if subtitle_text.isspace() or not subtitle_text:
+                        continue
+
                     subtitle_clip = TextClip(subtitle_text, fontsize=font_size, color='white', font=font)
                     subtitle_clip = subtitle_clip.set_position(
                         (horizontal_pos - subtitle_clip.w // 2, current_vertical_pos - subtitle_clip.h // 2))
@@ -205,14 +258,12 @@ class VideoGeneration:
                     clips_with_subtitles.extend([shadow_clip, subtitle_clip])
                     current_vertical_pos += line_height_offset
 
-                first_start_time = word['start']
                 current_group = []
                 length_str = 0
 
             current_group.append(word)
             length_str += len(word['alignedWord']) + 1
             last_end_time = word['end']
-
         if current_group:
             lines = group_subtitles_by_lines(current_group, self.config.subtitle_nb_word_per_line)
             current_vertical_pos = vertical_pos
@@ -220,7 +271,13 @@ class VideoGeneration:
             end_time = final_clip.duration
 
             for line in lines:
-                subtitle_text = " ".join([aligned_word2text[w['alignedWord'].lower()].get() for w in line])
+                line = [w for w in line if w['alignedWord'].lower() in aligned_word2text]
+                if not line:
+                    continue
+                subtitle_text = " ".join([aligned_word2text[w['alignedWord'].lower()].get() for w in line
+                                          if not aligned_word2text[w['alignedWord'].lower()].empty()])
+                if subtitle_text.isspace() or not subtitle_text:
+                    continue
                 subtitle_clip = TextClip(subtitle_text, fontsize=font_size, color='white', font=font)
                 subtitle_clip = subtitle_clip.set_position(
                     (horizontal_pos - subtitle_clip.w // 2, current_vertical_pos - subtitle_clip.h // 2))
@@ -237,7 +294,6 @@ class VideoGeneration:
 
                 clips_with_subtitles.extend([shadow_clip, subtitle_clip])
                 current_vertical_pos += line_height_offset
-
         final_clip = CompositeVideoClip([final_clip] + clips_with_subtitles)
         return final_clip
 
