@@ -4,7 +4,8 @@ from src.utils import Config
 
 
 class VideoEntry:
-    def __init__(self, script, title, hashtags, description):
+    def __init__(self, script, title, hashtags, description, filename=None):
+        self.filename = filename
         self.script = script
         self.title = title
         self.hashtags = hashtags
@@ -31,12 +32,13 @@ class CSVReader:
                     next(csv_read)  # Skip the header row
 
                 for row in csv_read:
-                    if len(row) != 4:
-                        print(f"Skipping invalid row: {row}")
-                        continue
+                    if len(row) == 4:
+                        script, video_title, hashtags, video_description = row
+                        filename = None
+                    elif len(row) == 5:
+                        filename, script, video_title, hashtags, video_description = row
 
-                    script, video_title, hashtags, video_description = row
-                    video_entry = VideoEntry(script, video_title, hashtags, video_description)
+                    video_entry = VideoEntry(script, video_title, hashtags, video_description, filename)
                     self.video_entries.append(video_entry)
 
         except FileNotFoundError:

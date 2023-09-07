@@ -126,7 +126,7 @@ class VideoGeneration:
         last_end = 0
         clip_start = 0
         for i, media_path in enumerate(media_files):
-            media = Media(media_path, media_duration,
+            media = Media(os.path.join(self.media_folder, media_path), media_duration,
                           video_path2video[media_path] if media_path in video_path2video else None)
             media.set_duration(media_duration)
             if i != len(media_files) - 1:
