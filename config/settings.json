@@ -10,19 +10,23 @@
     "frame_size": [810, 1440],
     "fps": 30,
     "fade_duration": 0.5,
-    "music_proportion": 0.15,
-    "subtitle_font": "Lucida-Bright-Demibold",
-    "_comment_subtitle_y_pos": "give the proportion of the screen from the top",
-    "subtitle_y_pos": 0.45,
-    "subtitle_nb_word": 4,
-    "subtitle_nb_word_per_line": 4,
-    "subtitle_font_size": 350,
-    "show_title": true,
-    "time_title": 3,
-    "color_title": "black",
-    "background_title": "255,255,255",
-    "background_title_opacity": 0.8,
-    "title_nb_word_per_line": 6
+    "music_proportion": 0.18,
+    "font_size": 280,
+    "subtitle": {
+      "font": "Lucida-Bright-Demibold",
+      "_comment__y_pos": "give the proportion of the screen from the top",
+      "y_pos": 0.25,
+      "nb_word": 4,
+      "nb_word_per_line": 3,
+    },
+    "title": {
+      "show": true,
+      "duration": 3,
+      "color": "white",
+      "background_color": "255,255,255",
+      "background_opacity": 0.0,
+      "nb_word_per_line": 3
+    }
   },
   "directories": {
     "audio_dir": "resources/audio_clips/",

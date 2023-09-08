@@ -39,17 +39,19 @@ def match_aligned_words_to_text(filtered_aligned_words, original_text):
     # Initialize the search start position to 0
     start_pos = 0
     current_word = filtered_aligned_words[0]['alignedWord'].lower()
-
     for i in range(len(filtered_aligned_words) - 1):
         next_word = filtered_aligned_words[i + 1]['alignedWord'].lower()
         # Create a pattern that starts with the current word and captures all characters until the next word
         pattern = re.compile(r'{}(.*?)(?={})'.format(re.escape(current_word), re.escape(next_word)), re.DOTALL)
 
         # Search for the pattern in the original text starting from start_pos
-        match = pattern.search(cleaned_text.lower(), start_pos)
+        # Limited the range of the search in order not to find a word too far away in case of mismatch
+        match = pattern.search(cleaned_text.lower()[start_pos: start_pos + 25])
         if match:
             # If a match is found, capture the full matched portion from the original text
             start, end = match.span()
+            start += start_pos
+            end += start_pos
             matched_text = original_text[mapping[start_pos]:mapping[end]]
             word_aligned2text[current_word].put(matched_text)
 
@@ -174,14 +176,14 @@ class VideoGeneration:
         vertical_pos = final_clip.h * self.config.subtitle_pos
         horizontal_pos = final_clip.w // 2
         length_str = 0
-        line_height_offset = font_size * 1.3
+        line_height_offset = font_size * 2
         shadow_offset = int(5 * final_clip.h / 1980)
 
         def group_subtitles_by_lines(word_group: list[dict], max_words_per_line: int) -> list[list[dict]]:
             return [word_group[i:i + max_words_per_line] for i in range(0, len(word_group), max_words_per_line)]
 
         # handle title
-        if self.config.show_title:
+        if self.config.show_title and title and not title.isspace():
             current_vertical_pos = vertical_pos
             title_lines = group_subtitles_by_lines(title.split(" "), self.config.title_nb_word_per_line)
             for line in title_lines:
@@ -216,6 +218,10 @@ class VideoGeneration:
 
                 clips_with_subtitles.extend([bg_clip, shadow_clip, title_clip])
                 current_vertical_pos += line_height_offset
+
+        if not script or script.isspace():
+            final_clip = CompositeVideoClip([final_clip] + clips_with_subtitles)
+            return final_clip
 
         filtered_words = [word for word in alignment['words'] if word['alignedWord'] != 'sp']
         aligned_word2text = match_aligned_words_to_text(filtered_words, script)

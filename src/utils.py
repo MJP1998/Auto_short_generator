@@ -1,5 +1,6 @@
 import json
 import os
+import tempfile
 
 from pydub import AudioSegment
 import numpy as np
@@ -37,19 +38,19 @@ class Config:
             self.fps = settings["video_settings"]["fps"]
             self.music_proportion = settings["video_settings"]["music_proportion"]
 
-            self.subtitle_pos = settings["video_settings"]["subtitle_y_pos"]
-            self.subtitle_nb_word = settings["video_settings"]["subtitle_nb_word"]
-            self.subtitle_nb_word_per_line = settings["video_settings"]["subtitle_nb_word_per_line"]
-            self.subtitle_font = settings["video_settings"]["subtitle_font"]
-            self.subtitle_font_size = settings["video_settings"]["subtitle_font_size"]
+            self.subtitle_pos = settings["video_settings"]["subtitle"]["y_pos"]
+            self.subtitle_nb_word = settings["video_settings"]["subtitle"]["nb_word"]
+            self.subtitle_nb_word_per_line = settings["video_settings"]["subtitle"]["nb_word_per_line"]
+            self.subtitle_font = settings["video_settings"]["font"]
+            self.subtitle_font_size = settings["video_settings"]["font_size"]
             self.fade_duration = settings["video_settings"]["fade_duration"]
 
-            self.show_title = settings["video_settings"]["show_title"]
-            self.time_title = settings["video_settings"]["time_title"]
-            self.background_title = tuple(map(int, settings["video_settings"]["background_title"].split(',')))
-            self.background_title_opacity = settings["video_settings"]["background_title_opacity"]
-            self.color_title = settings["video_settings"]["color_title"]
-            self.title_nb_word_per_line = settings["video_settings"]["title_nb_word_per_line"]
+            self.show_title = settings["video_settings"]["title"]["show"]
+            self.time_title = settings["video_settings"]["title"]["time"]
+            self.background_title = tuple(map(int, settings["video_settings"]["title"]["background_color"].split(',')))
+            self.background_title_opacity = settings["video_settings"]["title"]["background_opacity"]
+            self.color_title = settings["video_settings"]["title"]["color"]
+            self.title_nb_word_per_line = settings["video_settings"]["title"]["nb_word_per_line"]
 
             self.audio_dir = settings["directories"]["audio_dir"]
             self.image_dir = settings["directories"]["image_dir"]
@@ -96,11 +97,18 @@ def generate_save_path(audio1, audio2, extension="mp3"):
 
 
 class Audio:
-    def __init__(self, file_path, data=None, audio_segment=None):
+    def __init__(self, file_path=None, data=None, audio_segment=None):
         if audio_segment is None:
             audio_segment = AudioSegment.from_mp3(os.path.abspath(file_path))
         if data is None:
             data = audio_segment.raw_data
+
+        if file_path is None:
+            # Save the audio segment to the temporary file
+            audio_folder = Config().audio_dir
+            file_path = audio_folder + "temp.wav"
+
+            audio_segment.export(file_path, format="wav")
         self.audio_segment = audio_segment
         self.data = data  # The binary audio data
         self.file_path = file_path  # The path to the audio file
