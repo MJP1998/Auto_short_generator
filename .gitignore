@@ -1,5 +1,6 @@
 # Ignore private settings
 config/settings_private.json
+config/client_secrets.json
 
 # Ignore resource files but keep the folders
 resources/audio_clips/*

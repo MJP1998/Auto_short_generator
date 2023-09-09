@@ -34,6 +34,9 @@ class Config:
             self.elevenlabs_voice = settings["api"]["eleven_labs"]["voice"]
             self.elevenlabs_model = settings["api"]["eleven_labs"]["model"]
 
+            self.youtube_id = settings["api"]["youtube"]["id"]
+            self.youtube_secret_key = settings["api"]["youtube"]["secret_key"]
+
             self.frame_size = tuple(settings["video_settings"]["frame_size"])
             self.fps = settings["video_settings"]["fps"]
             self.music_proportion = settings["video_settings"]["music_proportion"]
@@ -46,7 +49,7 @@ class Config:
             self.fade_duration = settings["video_settings"]["fade_duration"]
 
             self.show_title = settings["video_settings"]["title"]["show"]
-            self.time_title = settings["video_settings"]["title"]["time"]
+            self.time_title = settings["video_settings"]["title"]["duration"]
             self.background_title = tuple(map(int, settings["video_settings"]["title"]["background_color"].split(',')))
             self.background_title_opacity = settings["video_settings"]["title"]["background_opacity"]
             self.color_title = settings["video_settings"]["title"]["color"]
@@ -56,6 +59,8 @@ class Config:
             self.image_dir = settings["directories"]["image_dir"]
             self.video_dir = settings["directories"]["video_dir"]
             self.music_dir = settings["directories"]["music_dir"]
+            self.config_dir = settings["directories"]["config_dir"]
+
             self.aligned_dir = settings["directories"]["aligned_dir"]
 
             self.csv_path = settings["input_files"]["csv_path"]
