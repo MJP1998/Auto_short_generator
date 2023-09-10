@@ -60,6 +60,7 @@ This project is licensed under the MIT License - see the LICENSE.md file for det
 
 ### Next steps
 
+- Automating upload to youtube, instagram/facebook and tiktok
+- Integrate a tts open-source model to stop relying on elevenlabs
+- Integrating stable diffusion model so as to generate the entire video
 - Integrating the chatgpt prompt to generate script, title, hashtags and description
-
-- Integrating stable diffusion model so as to generate the entire video with only the prompt
