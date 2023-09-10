@@ -2,7 +2,7 @@ import json
 import os
 
 from src.csv_reader import CSVReader
-from src.uploader_utils import upload_youtube_video
+from src.uploader_utils import upload_youtube_video, upload_to_tiktok
 from src.utils import Config
 
 
@@ -41,12 +41,13 @@ class Uploader:
         # Insert code here to upload video to YouTube
         upload_youtube_video(video_file_path, file_path, title, description, keywords=keywords)
 
-    def upload_to_tiktok(self):
+    def upload_to_tiktok(self, schedule=False, schedule_day="2023-09-14", schedule_time="01:30"):
         title = self.video_entry.title
-        description = self.video_entry.description
-        file_path = self.video_entry.file_path
-        # Insert code here to upload video to TikTok
-        print(f"Uploading {title} to TikTok...")
+        description = title + "\n" + self.video_entry.description
+        hashtags = self.video_entry.hashtags
+        description += "\n" + hashtags
+        video_file_path = self.file_path
+        upload_to_tiktok(video_file_path, description, schedule=schedule, schedule_day=schedule_day, schedule_time=schedule_time)
 
     def upload_to_instagram(self):
         title = self.video_entry.title
@@ -67,4 +68,5 @@ if __name__ == "__main__":
     videos = csv_reader.get_video_entries()
     video = videos[0]
     uploader = Uploader(video)
-    uploader.upload_to_youtube()
+    #uploader.upload_to_youtube()
+    uploader.upload_to_tiktok(schedule=True, schedule_day="14", schedule_time="01:30")
