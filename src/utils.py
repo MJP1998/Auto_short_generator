@@ -60,6 +60,8 @@ class Config:
             self.video_dir = settings["directories"]["video_dir"]
             self.music_dir = settings["directories"]["music_dir"]
             self.config_dir = settings["directories"]["config_dir"]
+            self.user_data_dir = settings["selenium"]["user_data_dir"]
+            self.user_profile_dir_tiktok = settings["selenium"]["user_profile_dir_tiktok"]
 
             self.aligned_dir = settings["directories"]["aligned_dir"]
 

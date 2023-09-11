@@ -15,6 +15,8 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException
 
+from src.utils import Config
+
 RETRIABLE_EXCEPTIONS = (httplib2.HttpLib2Error, IOError)
 RETRIABLE_STATUS_CODES = [500, 502, 503, 504]
 YOUTUBE_UPLOAD_SCOPE = "https://www.googleapis.com/auth/youtube.upload"
@@ -92,10 +94,11 @@ def upload_to_tiktok(file_path, description, schedule=True, schedule_day="13", s
     options.add_argument("--disable-web-security")
     options.add_argument(
         "--disable-features=CrossSiteDocumentBlockingIfIsolating,CrossSiteDocumentBlockingAlways,IsolateOrigins,site-per-process")
-    options.add_argument("--user-data-dir=C:/Users/mpilc/AppData/Local/Google/Chrome/User Data")
+    config = Config()
+    options.add_argument(f"--user-data-dir={config.user_data_dir}")
 
     # provide the profile name with which we want to open browser
-    options.add_argument(r'--profile-directory=Profile 5')
+    options.add_argument(rf'--profile-directory={config.user_profile_dir_tiktok}')
     options.add_argument("--disable-blink-features=AutomationControlled")
 
     # Adding argument to disable the AutomationControlled flag

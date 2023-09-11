@@ -47,5 +47,9 @@
   "alignment_model": {
     "acoustic_model_path": "",
     "dict_model_path": ""
+  },
+  "selenium": {
+    "user_data_dir": "",
+    "user_profile_dir_tiktok": ""
   }
 }
