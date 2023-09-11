@@ -50,6 +50,9 @@
   },
   "selenium": {
     "user_data_dir": "",
-    "user_profile_dir_tiktok": ""
+    "user_profile_dir_tiktok": "",
+    "user_profile_dir_fb": "",
+    "fb_asset_id": "",
+    "fb_business_id": ""
   }
 }

@@ -2,7 +2,7 @@ import json
 import os
 
 from src.csv_reader import CSVReader
-from src.uploader_utils import upload_youtube_video, upload_to_tiktok
+from src.uploader_utils import upload_youtube_video, upload_to_tiktok, upload_to_meta
 from src.utils import Config
 
 
@@ -49,14 +49,17 @@ class Uploader:
         video_file_path = self.file_path
         upload_to_tiktok(video_file_path, description, schedule=schedule, schedule_day=schedule_day, schedule_time=schedule_time)
 
-    def upload_to_instagram(self):
+    def upload_to_instagram(self, schedule=False, schedule_day="2023-09-14", schedule_time="01:30"):
         title = self.video_entry.title
-        description = self.video_entry.description
-        file_path = self.video_entry.file_path
-        # Insert code here to upload video to Instagram
-        print(f"Uploading {title} to Instagram...")
+        description = title + "\n" + self.video_entry.description
+        hashtags = self.video_entry.hashtags
+        description += "\n" + hashtags
+        video_file_path = self.file_path
+        upload_to_meta(video_file_path, description, schedule=schedule, schedule_day=schedule_day,
+                         schedule_time=schedule_time)
 
-    def upload_to_all(self):
+
+def upload_to_all(self):
         self.upload_to_youtube()
         self.upload_to_tiktok()
         self.upload_to_instagram()
@@ -69,4 +72,5 @@ if __name__ == "__main__":
     video = videos[0]
     uploader = Uploader(video)
     #uploader.upload_to_youtube()
-    uploader.upload_to_tiktok(schedule=True, schedule_day="14", schedule_time="01:30")
+    #uploader.upload_to_tiktok(schedule=True, schedule_day="14", schedule_time="01:30")
+    uploader.upload_to_instagram(schedule=True, schedule_day="14", schedule_time="01:30")

@@ -1,6 +1,7 @@
 import os
 
 import httplib2
+import pyperclip
 import random
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
@@ -14,6 +15,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException
+import autoit
 
 from src.utils import Config
 
@@ -23,7 +25,6 @@ YOUTUBE_UPLOAD_SCOPE = "https://www.googleapis.com/auth/youtube.upload"
 YOUTUBE_API_SERVICE_NAME = "youtube"
 YOUTUBE_API_VERSION = "v3"
 MAX_RETRIES = 10
-
 
 def upload_youtube_video(file_path, client_secret_path, title=" ", description=" ", category="24", keywords="",
                          privacy_status="private"):
@@ -136,7 +137,11 @@ def upload_to_tiktok(file_path, description, schedule=True, schedule_day="13", s
     ActionChains(driver).click(content_editable_div).key_down(Keys.CONTROL).send_keys('a').key_up(
         Keys.CONTROL).send_keys(Keys.DELETE).perform()
     # Write 'content' inside
-    ActionChains(driver).click(content_editable_div).send_keys(description).perform()
+    # Type description
+    pyperclip.copy(description)  # Copy to clipboard (to be more human-like)
+    # Paste the copied text
+    ActionChains(driver).click(content_editable_div).key_down(Keys.CONTROL).send_keys('v').key_up(Keys.CONTROL).perform()
+
 
     if schedule:
         # Locate the schedule switch input
@@ -200,4 +205,182 @@ def upload_to_tiktok(file_path, description, schedule=True, schedule_day="13", s
     button_element = driver.find_element(By.CSS_SELECTOR, "div.btn-post > button")
     button_element.click()
     time.sleep(10)
+    driver.quit()
+
+
+def upload_to_meta(file_path, description, schedule=True, schedule_day="13", schedule_time="16:30"):
+    options = webdriver.ChromeOptions()
+    options.add_argument("--allow-running-insecure-content")
+    options.add_argument("--disable-web-security")
+    options.add_argument(
+        "--disable-features=CrossSiteDocumentBlockingIfIsolating,CrossSiteDocumentBlockingAlways,IsolateOrigins,site-per-process")
+    config = Config()
+    options.add_argument(f"--user-data-dir={config.user_data_dir}")
+
+    # provide the profile name with which we want to open browser
+    options.add_argument(rf'--profile-directory={config.user_profile_dir_tiktok}')
+    options.add_argument("--disable-blink-features=AutomationControlled")
+
+    # Adding argument to disable the AutomationControlled flag
+    options.add_argument("--disable-blink-features=AutomationControlled")
+
+    # Exclude the collection of enable-automation switches
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+
+    # Turn-off userAutomationExtension
+    options.add_experimental_option("useAutomationExtension", False)
+
+    driver = webdriver.Chrome(options=options)
+    # Open TikTok
+    driver.get(f"https://business.facebook.com/latest/home?asset_id={config.fb_asset_id}&"
+               f"business_id={config.fb_business_id}")
+    time.sleep(5)
+
+    # Wait for the page to load
+    wait = WebDriverWait(driver, 10)
+    # Locate the button based on its role and the text it contains
+    create_reel_button = wait.until(EC.presence_of_element_located(
+        (By.XPATH, "//div[@role='button'][.//*[contains(text(), 'reel') or contains(text(), 'Reel')]]")))
+    # Scroll the button into view (optional but recommended)
+    driver.execute_script("arguments[0].scrollIntoView();", create_reel_button)
+    # Wait for a moment to let the UI catch up (optional but recommended)
+    time.sleep(1)
+    # Click the button
+    create_reel_button.click()
+    # Use AutoIt to interact with the file dialog
+    # Check which window is active and act accordingly
+    # Wait for the page to load
+    time.sleep(3)
+    wait = WebDriverWait(driver, 10)
+    # Locate the button for adding a video based on its role and the text in its descendants
+    add_video_button = wait.until(EC.presence_of_element_located((By.XPATH,
+                                                                  "//div[@role='button'][.//*[contains(text(), 'Ajouter une vidéo') or contains(text(), 'Add a video') or contains(text(), 'Upload a video')]]")))
+    # Scroll the button into view (optional but recommended)
+    driver.execute_script("arguments[0].scrollIntoView();", add_video_button)
+    # Wait for a moment to let the UI catch up (optional but recommended)
+    time.sleep(1)
+    # Click the button to add a video
+    add_video_button.click()
+    time.sleep(2)
+    if autoit.win_exists("Open"):
+        autoit.win_wait_active("Open")
+        autoit.control_send("Open", "Edit1", os.path.abspath(file_path))
+        autoit.control_click("Open", "Button1")
+    elif autoit.win_exists("Ouvrir"):
+        autoit.win_wait_active("Ouvrir")
+        autoit.control_send("Ouvrir", "Edit1", os.path.abspath(file_path))
+        autoit.control_click("Ouvrir", "Button1")
+    else:
+        print("Unexpected file dialog.")
+    time.sleep(4)
+    # Locate the content-editable element
+    content_editable = driver.find_element(By.CSS_SELECTOR, '.notranslate._5rpu[contenteditable="true"]')
+    # Click to focus
+    ActionChains(driver).click(content_editable).key_down(Keys.CONTROL).send_keys('a').key_up(
+        Keys.CONTROL).send_keys(Keys.DELETE).perform()
+    content_editable.click()
+    time.sleep(1)  # Let the click action take effect
+    # Type description
+    pyperclip.copy(description)  # Copy to clipboard
+    # Paste the copied text
+    ActionChains(driver).click(content_editable).key_down(Keys.CONTROL).send_keys('v').key_up(Keys.CONTROL).perform()
+
+    # Next *2
+    next_buttons = driver.find_elements(By.XPATH, "//div[@role='button'][.//*[text()='Suivant' or text()='Next']]")
+    driver.execute_script("arguments[0].scrollIntoView();", next_buttons[-1])
+    actions = ActionChains(driver)
+    actions.move_to_element(next_buttons[-1]).click().perform()
+
+    time.sleep(2)
+
+    next_buttons = driver.find_elements(By.XPATH, "//div[@role='button'][.//*[text()='Suivant' or text()='Next']]")
+    driver.execute_script("arguments[0].scrollIntoView();", next_buttons[-1])
+    actions = ActionChains(driver)
+    actions.move_to_element(next_buttons[-1]).click().perform()
+
+    time.sleep(1.5)
+    if schedule:
+        button = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located(
+                (By.XPATH, "//div[@role='button'][.//*[text()='Programmer' or text()='Schedule']]"))
+        )
+        # Click the button
+        button.click()
+        # Numeric Format
+        date_input = driver.find_element(By.XPATH, "//input[@placeholder='jj/mm/aaaa']")
+        date_input.click()
+
+        # Function to select a date
+        def select_date(day):
+            try:
+                # Find the date button that is not disabled
+                date_button = driver.find_element(By.XPATH,
+                                                  f'//div[@role="button"][text()="{day}"][@aria-disabled="false"]')
+                time.sleep(1)
+                date_button.click()
+                return True
+            except:
+                return False
+
+        # Try to select the 2nd day of the month
+        if not select_date(schedule_day):
+            # Click the 'Next Month' button and try again (replace with the actual selector)
+            next_button = driver.find_element(By.XPATH,
+                                              "//div[@role='button'][.//*[text()='Mois suivant' or text()='Next month']]")
+            next_button.click()
+            select_date(schedule_day)
+
+        time.sleep(0.5)
+
+        def select_time(hour, minute, meridian):
+            # Find the hour input element and set the hour
+            hour_input = driver.find_element(By.XPATH, '//input[@aria-label="heures"]')
+            hour_input.clear()
+            hour_input.send_keys(hour)
+            time.sleep(0.7)
+            # Find the minute input element and set the minute
+            # Modify this part if your specific website handles minute input differently
+            minute_input = driver.find_element(By.XPATH,
+                                               '//input[@aria-label="minutes"]')  # Replace with the actual selector
+            minute_input.clear()
+            minute_input.send_keys(minute)
+            time.sleep(0.5)
+            # Find the AM/PM input element and set it
+            meridian_input = driver.find_element(By.XPATH, '//input[@aria-label="méridien"]')
+            meridian_input.clear()
+            meridian_input.send_keys(meridian)
+
+        # Function to convert 24-hour time to 12-hour time with AM/PM
+        def convert_to_12_hour_format(hour, minute):
+            # Initialize the AM/PM variable
+            am_pm = "AM"
+            # Convert the hour and minute to integers
+            hour = int(hour)
+            minute = int(minute)
+            # Convert to 12-hour format
+            if hour >= 12:
+                if hour > 12:
+                    hour -= 12
+                am_pm = "PM"
+            elif hour == 0:
+                hour = 12
+            # Add leading zero to hour and minute if needed
+            hour_str = str(hour).zfill(2)
+            minute_str = str(minute).zfill(2)
+            return hour_str, minute_str, am_pm
+
+        hour, minutes, am_pm = convert_to_12_hour_format(schedule_time.split(':')[0], schedule_time.split(':')[1])
+        select_time(hour, minutes, am_pm)
+        time.sleep(1.1)
+        schedule_buttons = driver.find_elements(By.XPATH, "//div[@role='button'][.//*[text()='Programmer' or text()='Schedule']]")
+        driver.execute_script("arguments[0].scrollIntoView();", schedule_buttons[-1])
+        actions = ActionChains(driver)
+        actions.move_to_element(schedule_buttons[-1]).click().perform()
+    else:
+        schedule_buttons = driver.find_elements(By.XPATH,
+                                                "//div[@role='button'][.//*[text()='Partager' or text()='Share']]")
+        driver.execute_script("arguments[0].scrollIntoView();", schedule_buttons[-1])
+        actions = ActionChains(driver)
+        actions.move_to_element(schedule_buttons[-1]).click().perform()
+    time.sleep(3.7)
     driver.quit()
