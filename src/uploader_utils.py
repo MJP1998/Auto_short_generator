@@ -27,7 +27,7 @@ YOUTUBE_API_VERSION = "v3"
 MAX_RETRIES = 10
 
 def upload_youtube_video(file_path, client_secret_path, title=" ", description=" ", category="24", keywords="",
-                         privacy_status="private"):
+                         privacy_status="private", schedule=True, schedule_day="14", schedule_time="16:30"):
     # Authenticate and construct service.
     flow = InstalledAppFlow.from_client_secrets_file(client_secret_path, scopes=[YOUTUBE_UPLOAD_SCOPE])
     credentials = flow.run_local_server()
@@ -53,6 +53,127 @@ def upload_youtube_video(file_path, client_secret_path, title=" ", description="
     )
 
     resumable_upload(insert_request)
+
+    time.sleep(10)
+
+    #then schedule it
+    options = webdriver.ChromeOptions()
+    options.add_argument("--allow-running-insecure-content")
+    options.add_argument("--disable-web-security")
+    options.add_argument(
+        "--disable-features=CrossSiteDocumentBlockingIfIsolating,CrossSiteDocumentBlockingAlways,IsolateOrigins,site-per-process")
+    config = Config()
+    options.add_argument(f"--user-data-dir={config.user_data_dir}")
+    # provide the profile name with which we want to open browser
+    options.add_argument(rf'--profile-directory={config.user_profile_dir_youtube}')
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    # Adding argument to disable the AutomationControlled flag
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    # Exclude the collection of enable-automation switches
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    # Turn-off userAutomationExtension
+    options.add_experimental_option("useAutomationExtension", False)
+    driver = webdriver.Chrome(options=options)
+    # Open TikTok
+    driver.get(
+        f"https://studio.youtube.com/channel/{config.youtube_channel_id}/videos/upload?filter=%5B%5D&sort=%7B%22columnType%22%3A%22date%22%2C%22sortOrder%22%3A%22DESCENDING%22%7D")
+    time.sleep(5)  # Wait for the page to load*
+
+    wait = WebDriverWait(driver, 10)
+    target_div = wait.until(
+        EC.presence_of_element_located((By.XPATH, f'//div[@id="row-container"][.//*[contains(., "{title}")]]')))
+    driver.execute_script("arguments[0].scrollIntoView({block: 'center', inline: 'center'});", target_div)
+    time.sleep(1)
+
+    # Find the clickable button within target_div
+    button_to_click = target_div.find_element(By.CLASS_NAME, 'editable')
+    # Click the button
+    driver.execute_script("arguments[0].click();", button_to_click)
+    time.sleep(2)
+    if schedule:
+        # Wait until the container is present
+        container = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "second-container"))
+        )
+        # Now find the radio button within the container
+        radio_button = container.find_element(By.XPATH, './/tp-yt-paper-radio-button[@id="schedule-radio-button"]')
+        # Click the radio button
+        radio_button.click()
+        time.sleep(0.3)
+        # Now locate the dropdown within that container
+        dropdown = container.find_element(By.CSS_SELECTOR, ".container.style-scope.ytcp-dropdown-trigger")
+        dropdown.click()
+        time.sleep(0.3)
+        # Find the first selectable calendar day that contains the text "14"
+
+        selectable_day = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH,
+                                            "//span[contains(@class, 'calendar-day') and not(contains(@class, 'disabled')) and not(contains(@class, 'invisible')) and contains(., '{}')]".format(
+                                                schedule_day)))
+        )
+
+        # Scroll the day into view
+        actions = ActionChains(driver)
+        actions.move_to_element(selectable_day).perform()
+        # Click the day
+        time.sleep(0.5)
+        selectable_day.click()
+        time.sleep(1)
+
+        # Find the input element within the container and click it
+        input_element = container.find_element(By.CSS_SELECTOR, "input.style-scope.tp-yt-paper-input")
+        input_element.click()
+        # Round minutes to the nearest 15
+        hour = int(schedule_time.split(':')[0])
+        minutes = int(schedule_time.split(':')[1])
+        rounded_minutes = round(minutes / 15) * 15
+        # If rounding minutes exceeds 59, increment the hour and set minutes to 0
+        if rounded_minutes == 60:
+            rounded_minutes = 0
+            hour += 1
+        # If hour exceeds 23, reset it to 0 (start of the day)
+        if hour > 23:
+            hour = 0
+        # Convert to 24-hour format time string
+        closest_time = f"{hour:02d}:{rounded_minutes:02d}"
+        # Wait and then click on the closest time
+        time_to_click = WebDriverWait(container, 10).until(
+            EC.presence_of_element_located((By.XPATH, f"//tp-yt-paper-item[text()='{closest_time}']"))
+        )
+        # Scroll the day into view
+        actions = ActionChains(driver)
+        actions.move_to_element(time_to_click).perform()
+        time.sleep(1)  # Sleep to mimic human interaction
+        time_to_click.click()
+        time.sleep(2)
+        # Find the button with id 'save-button' and text 'Programmer' and click it
+        button = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//ytcp-button[@id='save-button']/div[text()='Programmer' or "
+                                                      "text()='Schedule']"))
+        )
+        time.sleep(1)  # Sleep to mimic human interaction
+        button.click()
+    else:
+        # Locate the 'first-container'
+        first_container = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "first-container"))
+        )
+
+        # Find the radio button with the label 'Publique' or 'Public' within the 'first-container' and click it
+        radio_button = first_container.find_element(By.XPATH,
+                                                    ".//tp-yt-paper-radio-button[div[@id='radioLabel'][contains(text("
+                                                    "), 'Publique') or contains(text(), 'Public')]]")
+        radio_button.click()
+        time.sleep(1.2)
+        # Find the button with id 'save-button' and text 'Programmer' and click it
+        button = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//ytcp-button[@id='save-button']/div[text()='Enregistrer' or "
+                                                      "text()='Save']"))
+        )
+        time.sleep(1)  # Sleep to mimic human interaction
+        button.click()
+    time.sleep(4)
+    driver.quit()
 
 
 def resumable_upload(request):
@@ -218,7 +339,7 @@ def upload_to_meta(file_path, description, schedule=True, schedule_day="13", sch
     options.add_argument(f"--user-data-dir={config.user_data_dir}")
 
     # provide the profile name with which we want to open browser
-    options.add_argument(rf'--profile-directory={config.user_profile_dir_tiktok}')
+    options.add_argument(rf'--profile-directory={config.user_profile_dir_fb}')
     options.add_argument("--disable-blink-features=AutomationControlled")
 
     # Adding argument to disable the AutomationControlled flag

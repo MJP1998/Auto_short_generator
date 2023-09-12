@@ -62,8 +62,10 @@ class Config:
             self.user_data_dir = settings["selenium"]["user_data_dir"]
             self.user_profile_dir_tiktok = settings["selenium"]["user_profile_dir_tiktok"]
             self.user_profile_dir_fb = settings["selenium"]["user_profile_dir_fb"]
+            self.user_profile_dir_youtube = settings["selenium"]["user_profile_dir_youtube"]
             self.fb_asset_id = settings["selenium"]["fb_asset_id"]
             self.fb_business_id = settings["selenium"]["fb_business_id"]
+            self.youtube_channel_id = settings["selenium"]["youtube_channel_id"]
 
             self.aligned_dir = settings["directories"]["aligned_dir"]
 
