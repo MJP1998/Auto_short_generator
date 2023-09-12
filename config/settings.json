@@ -4,6 +4,10 @@
       "API_KEY": "",
       "voice": "Rachel",
       "model": "eleven_monolingual_v1"
+    },
+    "youtube": {
+      "id": "",
+      "secret_key": ""
     }
   },
   "video_settings": {
@@ -12,12 +16,12 @@
     "fade_duration": 0.5,
     "music_proportion": 0.18,
     "font_size": 280,
+    "font": "Lucida-Bright-Demibold",
     "subtitle": {
-      "font": "Lucida-Bright-Demibold",
       "_comment__y_pos": "give the proportion of the screen from the top",
       "y_pos": 0.25,
       "nb_word": 4,
-      "nb_word_per_line": 3,
+      "nb_word_per_line": 3
     },
     "title": {
       "show": true,
@@ -33,7 +37,8 @@
     "image_dir": "resources/medias/",
     "video_dir": "resources/videos/",
     "music_dir": "resources/musics/",
-    "aligned_dir": "resources/aligned_text"
+    "aligned_dir": "resources/aligned_text",
+    "config_dir": "config/"
   },
   "input_files": {
     "csv_path": "input.csv",
@@ -42,5 +47,16 @@
   "alignment_model": {
     "acoustic_model_path": "",
     "dict_model_path": ""
+  },
+  "selenium": {
+    "_comment_data_dir": "find everything by doing chrome://version, you should put below the path to your chrome user data folder",
+    "user_data_dir": "",
+    "_comment_user_profile": "you should put the path to your chrome profile in which your are logged in to your accounts",
+    "user_profile_dir_tiktok": "",
+    "user_profile_dir_fb": "",
+    "user_profile_dir_youtube": "",
+    "youtube_channel_id": "",
+    "fb_asset_id": "",
+    "fb_business_id": ""
   }
 }
