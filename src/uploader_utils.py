@@ -382,15 +382,11 @@ def upload_to_meta(file_path, description, schedule=True, schedule_day="13", sch
     time.sleep(1)
     # Click the button to add a video
     add_video_button.click()
-    time.sleep(2)
-    if autoit.win_exists("Open"):
-        autoit.win_wait_active("Open")
-        autoit.control_send("Open", "Edit1", os.path.abspath(file_path))
-        autoit.control_click("Open", "Button1")
-    elif autoit.win_exists("Ouvrir"):
-        autoit.win_wait_active("Ouvrir")
-        autoit.control_send("Ouvrir", "Edit1", os.path.abspath(file_path))
-        autoit.control_click("Ouvrir", "Button1")
+    time.sleep(4)
+    if autoit.win_exists("[REGEXPTITLE:(Open|Ouvrir)]"):
+        autoit.win_wait_active("[REGEXPTITLE:(Open|Ouvrir)]")
+        autoit.control_send("[REGEXPTITLE:(Open|Ouvrir)]", "Edit1", os.path.abspath(file_path))
+        autoit.control_click("[REGEXPTITLE:(Open|Ouvrir)]", "Button1")
     else:
         print("Unexpected file dialog.")
     time.sleep(6)
