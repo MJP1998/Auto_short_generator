@@ -74,7 +74,7 @@ def upload_youtube_video(file_path, client_secret_path, title=" ", description="
     # Turn-off userAutomationExtension
     options.add_experimental_option("useAutomationExtension", False)
     driver = webdriver.Chrome(options=options)
-    # Open TikTok
+    # Open yt
     driver.get(
         f"https://studio.youtube.com/channel/{config.youtube_channel_id}/videos/upload?filter=%5B%5D&sort=%7B%22columnType%22%3A%22date%22%2C%22sortOrder%22%3A%22DESCENDING%22%7D")
     time.sleep(5)  # Wait for the page to load*
@@ -321,7 +321,7 @@ def upload_to_tiktok(file_path, description, schedule=True, schedule_day="13", s
     time.sleep(2)
     switch_element = driver.find_element(By.ID, "tux-4")
     switch_element.click()
-    time.sleep(5)
+    time.sleep(8)
     # Locate the button within its parent div by class name 'btn-post' and click
     button_element = driver.find_element(By.CSS_SELECTOR, "div.btn-post > button")
     button_element.click()
@@ -393,7 +393,7 @@ def upload_to_meta(file_path, description, schedule=True, schedule_day="13", sch
         autoit.control_click("Ouvrir", "Button1")
     else:
         print("Unexpected file dialog.")
-    time.sleep(4)
+    time.sleep(6)
     # Locate the content-editable element
     content_editable = driver.find_element(By.CSS_SELECTOR, '.notranslate._5rpu[contenteditable="true"]')
     # Click to focus

@@ -42,7 +42,7 @@ class Uploader:
         upload_youtube_video(video_file_path, file_path, title, description, keywords=keywords, schedule=schedule,
                              schedule_day=schedule_day, schedule_time=schedule_time)
 
-    def upload_to_tiktok(self, schedule=False, schedule_day="2023-09-14", schedule_time="01:30"):
+    def upload_to_tiktok(self, schedule=False, schedule_day="14", schedule_time="01:30"):
         title = self.video_entry.title
         description = title + "\n" + self.video_entry.description
         hashtags = self.video_entry.hashtags
@@ -50,7 +50,7 @@ class Uploader:
         video_file_path = self.file_path
         upload_to_tiktok(video_file_path, description, schedule=schedule, schedule_day=schedule_day, schedule_time=schedule_time)
 
-    def upload_to_instagram(self, schedule=False, schedule_day="2023-09-14", schedule_time="01:30"):
+    def upload_to_instagram(self, schedule=False, schedule_day="14", schedule_time="01:30"):
         title = self.video_entry.title
         description = title + "\n" + self.video_entry.description
         hashtags = self.video_entry.hashtags
@@ -59,21 +59,21 @@ class Uploader:
         upload_to_meta(video_file_path, description, schedule=schedule, schedule_day=schedule_day,
                          schedule_time=schedule_time)
 
-    def upload_to_all(self, schedule=False, schedule_day="2023-09-14", schedule_time="01:30"):
+    def upload_to_all(self, schedule=False, schedule_day="14", schedule_time="01:30"):
         self.upload_to_youtube(schedule, schedule_day, schedule_time)
         self.upload_to_tiktok(schedule, schedule_day, schedule_time)
         self.upload_to_instagram(schedule, schedule_day, schedule_time)
 
 
 if __name__ == "__main__":
-    csv_name = "dancingman"
+    csv_name = "fire"
     csv_reader = CSVReader(f"csv/{csv_name}.csv")
     videos = csv_reader.get_video_entries()
     video = videos[0]
     uploader = Uploader(video)
     schedule = True
-    schedule_day = "15"
-    schedule_time = "01:30"
+    schedule_day = "16"
+    schedule_time = "00:30"
     #uploader.upload_to_youtube(schedule, schedule_day, schedule_time)
     #uploader.upload_to_tiktok(schedule, schedule_day, schedule_time)
     #uploader.upload_to_instagram(schedule, schedule_day, schedule_time)
