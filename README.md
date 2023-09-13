@@ -60,7 +60,18 @@ This project is licensed under the MIT License - see the LICENSE.md file for det
 
 ### Next steps
 
-- Automating upload to youtube, instagram/facebook and tiktok
+- ~~Automating upload to youtube, instagram/facebook and tiktok~~ :white_check_mark:
 - Integrate a tts open-source model to stop relying on elevenlabs
 - Integrating stable diffusion model so as to generate the entire video
 - Integrating the chatgpt prompt to generate script, title, hashtags and description
+
+### Disclaimer
+
+This software is provided "as is," without warranty of any kind, express or implied. While the software has been designed to automate the process of generating and uploading short videos to various platforms, users are solely responsible for the content they generate and upload using this tool.
+
+**Important Points:**
+1. The auto-upload feature interacts with third-party platforms. Always adhere to the terms of service of these platforms when using this feature.
+2. This tool does not guarantee the successful upload of videos or any other content to third-party platforms.
+3. I am not responsible for any damages, content violations, or other legal issues that may arise from using this tool.
+
+By using this software, you agree to the terms of this disclaimer and assume all risks associated with its use.
