@@ -20,15 +20,15 @@
     "subtitle": {
       "_comment__y_pos": "give the proportion of the screen from the top",
       "y_pos": 0.25,
-      "nb_word": 4,
+      "nb_word": 3,
       "nb_word_per_line": 3
     },
     "title": {
       "show": true,
       "duration": 3,
-      "color": "white",
+      "color": "black",
       "background_color": "255,255,255",
-      "background_opacity": 0.0,
+      "background_opacity": 0.4,
       "nb_word_per_line": 3
     }
   },

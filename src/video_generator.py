@@ -101,7 +101,6 @@ class VideoGeneration:
             video_path = os.path.join(self.media_folder, video_file)
             video_clip = VideoFileClip(video_path)
             video_path2video[video_file] = video_clip
-
         while True:
             total_video_duration = 0
             video_with_more_time = 0
@@ -121,8 +120,7 @@ class VideoGeneration:
 
             if abs(media_duration - updated_media_duration) < 0.01:  # Convergence criteria
                 break
-
-            media_duration = updated_media_duration
+            media_duration = (media_duration + updated_media_duration) / 2
 
         clips = []
         last_end = 0
@@ -236,7 +234,7 @@ class VideoGeneration:
                     if abs(0.5 - self.config.subtitle_pos) < 0.1:
                         current_vertical_pos = 0.7 * final_clip.h
                     else:
-                        current_vertical_pos = final_clip.g - vertical_pos
+                        current_vertical_pos = final_clip.h - vertical_pos
 
                 end_time = word['start']
                 for line in lines:
