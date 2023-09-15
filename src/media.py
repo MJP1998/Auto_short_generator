@@ -45,8 +45,8 @@ class Media:
             zoom = False
         if "shift" in info and info["shift"].isdigit() and int(info["shift"]) == 0:
             shift = False
-
-        self.shift_and_zoom(zoom, shift)
+        if zoom or shift:
+            self.shift_and_zoom(zoom, shift)
 
     def set_duration(self, duration: float):
         # Do the required processing here
@@ -130,7 +130,8 @@ class Media:
             y_center=self.clip.size[1] // 2,
             width=self.clip.size[0] - left_crop - right_crop,
             height=self.clip.size[1] - top_crop - bottom_crop
-        )
+        ).resize(height = self.final_clip_frame_size[1])
+
 
     def trim(self, time):
         self.clip = self.clip.subclip(time)
@@ -212,7 +213,7 @@ def pad_video_to_aspect_ratio(video_clip, width, height):
         padding = (new_width - video_clip.size[0]) // 2
         padded_clip = video_clip.margin(left=padding, right=padding, color=(0, 0, 0))
 
-    return padded_clip
+    return padded_clip.resize(newsize=(width, height))
 
 
 def parse_filename(filename):
