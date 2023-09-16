@@ -29,7 +29,7 @@
       "color": "black",
       "background_color": "255,255,255",
       "background_opacity": 0.65,
-      "nb_word_per_line": 4'',
+      "nb_word_per_line": 4,
       "font_size": 350
     }
   },
