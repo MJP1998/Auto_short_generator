@@ -251,7 +251,7 @@ def upload_to_tiktok(file_path, description, schedule=True, schedule_day="13", s
 
     # Send the path of the file to upload
     file_input.send_keys(os.path.abspath(file_path))
-    time.sleep(5)
+    time.sleep(8)
     # Locate the content-editable div
     content_editable_div = driver.find_element(By.XPATH, "//div[@data-contents='true']")
     # Clear the existing text
@@ -382,8 +382,9 @@ def upload_to_meta(file_path, description, schedule=True, schedule_day="13", sch
     time.sleep(1)
     # Click the button to add a video
     add_video_button.click()
-    time.sleep(4)
+    time.sleep(5)
     if autoit.win_exists("[REGEXPTITLE:(Open|Ouvrir)]"):
+        autoit.win_activate("[REGEXPTITLE:(Open|Ouvrir)]")
         autoit.win_wait_active("[REGEXPTITLE:(Open|Ouvrir)]")
         autoit.control_send("[REGEXPTITLE:(Open|Ouvrir)]", "Edit1", os.path.abspath(file_path))
         autoit.control_click("[REGEXPTITLE:(Open|Ouvrir)]", "Button1")

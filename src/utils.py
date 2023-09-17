@@ -43,11 +43,12 @@ class Config:
             self.subtitle_nb_word = settings["video_settings"]["subtitle"]["nb_word"]
             self.subtitle_nb_word_per_line = settings["video_settings"]["subtitle"]["nb_word_per_line"]
             self.subtitle_font = settings["video_settings"]["font"]
-            self.subtitle_font_size = settings["video_settings"]["font_size"]
+            self.subtitle_font_size = settings["video_settings"]["subtitle"]["font_size"]
             self.fade_duration = settings["video_settings"]["fade_duration"]
 
             self.show_title = settings["video_settings"]["title"]["show"]
             self.time_title = settings["video_settings"]["title"]["duration"]
+            self.title_font_size = settings["video_settings"]["title"]["font_size"]
             self.background_title = tuple(map(int, settings["video_settings"]["title"]["background_color"].split(',')))
             self.background_title_opacity = settings["video_settings"]["title"]["background_opacity"]
             self.color_title = settings["video_settings"]["title"]["color"]

@@ -218,7 +218,8 @@ class VideoGeneration:
         # adapt the font_size to the resolution
         font_size = int(font_size * final_clip.h / 1980)
         # adapt the font_size for the nb of words per line
-        title_font_size = int(font_size * 1.2 / self.config.title_nb_word_per_line)
+        title_font_size = int(self.config.title_font_size * final_clip.h /
+                              (1980 * self.config.title_nb_word_per_line))
         font_size = int(font_size / self.config.subtitle_nb_word_per_line)
 
         font = self.config.subtitle_font
@@ -226,96 +227,133 @@ class VideoGeneration:
         vertical_pos = final_clip.h * self.config.subtitle_pos
         horizontal_pos = final_clip.w // 2
         length_str = 0
-        line_height_offset = font_size * 2
         shadow_offset = int(5 * final_clip.h / 1980)
 
         def group_subtitles_by_lines(word_group: list[dict], max_words_per_line: int) -> list[list[dict]]:
             return [word_group[i:i + max_words_per_line] for i in range(0, len(word_group), max_words_per_line)]
 
         def create_clips_for_subtitle(subtitle_text, font_size, font, shadow_offset, start_time, end_time,
-                                      current_vertical_pos, color='white', include_background=False):
-            parts = list(filter(None, re.split(r'([^\x00-\x7F]+)', subtitle_text)))
-            total_width = 0
-            max_height = 0  # To keep track of the maximum height among all clips
+                                      current_vertical_pos, screen_width, vertical_line_space, proportion=0.8,
+                                      color='white', include_background=False):
 
-            clips_data = []  # To store the created clips and their dimensions
-            text_parts = []
-            # First, measure the total width and maximum height
-            for part in parts:
-                if re.match(r'[^\x00-\x7F]+', part):
-                    emoji_clip = create_emoji_image_clip(part,
-                                                         font_size)  # Replace with your function to convert emoji to ImageClip
-                    clips_data.append((emoji_clip, emoji_clip.w, emoji_clip.h))
-                    total_width += emoji_clip.w
-                    max_height = max(max_height, emoji_clip.h)
-                else:
-                    text_parts.append(part)
-                    text_clip = TextClip(part, fontsize=font_size, color=color, font=font)
-                    clips_data.append((text_clip, text_clip.w, text_clip.h))
-                    total_width += text_clip.w
-                    max_height = max(max_height, text_clip.h)
+            # Split the subtitle text into words and emojis
+            parts = list(filter(None, re.split(r'([^\x00-\x7F]+|\s+)', subtitle_text)))
 
-            # Then, position the clips
-            current_horizontal_pos = final_clip.w // 2 - total_width // 2
-            index_text_part = 0
+            # Initialize variables
+            max_line_width = int(screen_width * proportion)
+            current_line_width = 0
+            current_line_height = 0
+            line_clips = []
             all_clips = []
+            space_width = TextClip(" ", fontsize=font_size, color=color, font=font).w
 
-            if include_background:
-                # Create a black background with the same size as subtitle_clip
-                bg_clip = ColorClip(size=(total_width, max_height), color=self.config.background_title)
+            first_word_in_line = True
 
-                # Set the opacity of the background to 0.4
-                bg_clip = bg_clip.set_opacity(max(0., min(1., float(self.config.background_title_opacity))))
+            for part in parts:
+                if part.isspace():  # Skip pure whitespace
+                    continue
 
-                # Set the duration and start/end time of the background to match subtitle_clip
+                # Create the clip and get its dimensions
+                if re.match(r'[^\x00-\x7F]+', part):  # For emojis
+                    clip = create_emoji_image_clip(part, font_size)  # Replace with your emoji to ImageClip function
+                else:
+                    clip = TextClip(part, fontsize=font_size, color=color, font=font)
+
+                clip_w, clip_h = clip.w, clip.h
+
+                # Check if adding this word would exceed the max line width
+                if current_line_width + clip_w + (0 if first_word_in_line else space_width) > max_line_width:
+
+                    if include_background:
+                        # Create and position background for this line
+                        bg_clip = ColorClip(size=(current_line_width, current_line_height), color=self.config.background_title)
+                        bg_clip = bg_clip.set_opacity(self.config.background_title_opacity)
+                        bg_clip = bg_clip.set_duration(end_time - start_time)
+                        bg_clip = bg_clip.set_start(start_time).set_end(end_time)
+                        bg_clip = bg_clip.set_position(
+                            (screen_width // 2 - current_line_width // 2, current_vertical_pos))
+                        all_clips.append(bg_clip)
+
+                    # Position the current line's clips and add to all_clips
+                    line_start_pos = screen_width // 2 - current_line_width // 2
+                    for lc, offset, txt in line_clips:
+                        if isinstance(lc, TextClip):
+                            lc = lc.set_position((line_start_pos + offset, current_vertical_pos))
+                        else:
+                            lc = lc.set_position((line_start_pos + offset, current_vertical_pos + lc.h // 3))
+
+                        lc = lc.set_start(start_time).set_end(end_time)
+
+                        # Add shadow if it's a text clip
+                        if isinstance(lc, TextClip):
+                            shadow_clip = TextClip(txt, fontsize=font_size, color='black',
+                                                   font=font)
+                            shadow_clip = shadow_clip.set_position((line_start_pos + offset + shadow_offset,
+                                                                    current_vertical_pos + shadow_offset // 2))
+                            shadow_clip = shadow_clip.set_start(start_time).set_end(end_time).fx(vfx.colorx, 0.7)
+                            all_clips.append(shadow_clip)
+
+                        all_clips.append(lc)
+
+                    # Update vertical position for the next line
+                    current_vertical_pos += current_line_height + vertical_line_space
+                    # Reset current line variables
+                    current_line_width = 0
+                    current_line_height = 0
+                    line_clips = []
+                    first_word_in_line = True
+
+                # Add the word to the current line
+                if not first_word_in_line:
+                    current_line_width += space_width  # Add space between words
+
+                line_clips.append((clip, current_line_width, part))
+                current_line_width += clip_w
+                current_line_height = max(current_line_height, clip_h)
+                first_word_in_line = False
+
+            # Position and add the remaining clips in the last line
+            line_start_pos = screen_width // 2 - current_line_width // 2
+            if line_clips and include_background:
+                # Create and position background for this line
+                bg_clip = ColorClip(size=(current_line_width, current_line_height),
+                                    color=self.config.background_title)
+                bg_clip = bg_clip.set_opacity(self.config.background_title_opacity)
                 bg_clip = bg_clip.set_duration(end_time - start_time)
                 bg_clip = bg_clip.set_start(start_time).set_end(end_time)
-
-                # Position the background
-                bg_clip = bg_clip.set_position((horizontal_pos - total_width // 2,
-                                                current_vertical_pos - max_height // 2))
-
+                bg_clip = bg_clip.set_position(
+                    (screen_width // 2 - current_line_width // 2, current_vertical_pos))
                 all_clips.append(bg_clip)
-
-            for clip, clip_w, clip_h in clips_data:
-                vertical_position = current_vertical_pos - max_height // 2
-                if not isinstance(clip, TextClip):  # Assuming emoji clips are ImageClips
-                    clip = clip.set_position((current_horizontal_pos, vertical_position + clip.h // 3))
-                    clip = clip.set_start(start_time).set_end(end_time)
-                    all_clips.append(clip)
+            for lc, offset, txt in line_clips:
+                if isinstance(lc, TextClip):
+                    lc = lc.set_position((line_start_pos + offset, current_vertical_pos))
                 else:
-                    clip = clip.set_position((current_horizontal_pos, vertical_position))
-                    clip = clip.set_start(start_time).set_end(end_time)
-
-                    shadow_clip = TextClip(text_parts[index_text_part], fontsize=font_size, color='black', font=font)
-                    shadow_clip.get_frame(0)
-                    shadow_clip = shadow_clip.set_position((current_horizontal_pos + shadow_offset,
-                                                            vertical_position + shadow_offset // 2))
+                    lc = lc.set_position((line_start_pos + offset, current_vertical_pos + lc.h // 3))
+                lc = lc.set_start(start_time).set_end(end_time)
+                # Add shadow if it's a text clip
+                if isinstance(lc, TextClip):
+                    shadow_clip = TextClip(txt, fontsize=font_size, color='black', font=font)
+                    shadow_clip = shadow_clip.set_position((line_start_pos + offset + shadow_offset,
+                                                            current_vertical_pos + shadow_offset // 2))
                     shadow_clip = shadow_clip.set_start(start_time).set_end(end_time).fx(vfx.colorx, 0.7)
-                    index_text_part += 1
                     all_clips.append(shadow_clip)
-                    all_clips.append(clip)
-                current_horizontal_pos += clip_w
+
+                all_clips.append(lc)
 
             return all_clips
 
         # handle title
         if self.config.show_title and title and not title.isspace():
             current_vertical_pos = vertical_pos
-            title_lines = group_subtitles_by_lines(title.split(" "), self.config.title_nb_word_per_line)
-            for title_line in title_lines:
-                if not title_line:
-                    continue
-                title_text = " ".join(title_line)
-                if title_text.isspace() or not title_text:
-                    continue
-                subtitle_clips = create_clips_for_subtitle(title_text, title_font_size, font, shadow_offset, 0,
+            if title and not title.isspace():
+                subtitle_clips = create_clips_for_subtitle(title, title_font_size, font, shadow_offset, 0,
                                                            self.config.time_title,
                                                            current_vertical_pos,
-                                                           self.config.color_title,
-                                                           True)
+                                                           screen_width=final_clip.w,
+                                                           vertical_line_space=title_font_size//5,
+                                                           color=self.config.color_title,
+                                                           include_background=True)
                 clips_with_subtitles.extend(subtitle_clips)
-                current_vertical_pos += line_height_offset
 
         if not script or script.isspace():
             final_clip = CompositeVideoClip([final_clip] + clips_with_subtitles)
@@ -325,7 +363,6 @@ class VideoGeneration:
         aligned_word2text = match_aligned_words_to_text(filtered_words, script_without_emojis, extracted_emojis)
 
         def add_clips_from_group(group, clips_with_subtitles, end_time):
-            lines = group_subtitles_by_lines(group, self.config.subtitle_nb_word_per_line)
             start_time = current_group[0]['start']
             current_vertical_pos = vertical_pos
             if start_time < self.config.time_title and self.config.show_title:
@@ -333,20 +370,19 @@ class VideoGeneration:
                     current_vertical_pos = 0.7 * final_clip.h
                 else:
                     current_vertical_pos = final_clip.h - vertical_pos
+            subtitle_group = [w for w in group if w['alignedWord'].lower() in aligned_word2text]
+            if subtitle_group:
+                subtitle_text = " ".join([aligned_word2text[w['alignedWord'].lower()].get() for w in subtitle_group
+                                      if not aligned_word2text[w['alignedWord'].lower()].empty()])
 
-            for line in lines:
-                line = [w for w in line if w['alignedWord'].lower() in aligned_word2text]
-                if not line:
-                    continue
-                subtitle_text = " ".join([aligned_word2text[w['alignedWord'].lower()].get() for w in line
-                                          if not aligned_word2text[w['alignedWord'].lower()].empty()])
-                if subtitle_text.isspace() or not subtitle_text:
-                    continue
-                subtitle_clips = create_clips_for_subtitle(subtitle_text, font_size, font, shadow_offset, start_time,
-                                                           end_time,
-                                                           current_vertical_pos)
-                clips_with_subtitles.extend(subtitle_clips)
-                current_vertical_pos += line_height_offset
+                if subtitle_text and not subtitle_text.isspace():
+
+                    subtitle_clips = create_clips_for_subtitle(subtitle_text, font_size, font,
+                                                               shadow_offset, start_time, end_time,
+                                                               current_vertical_pos,
+                                                               screen_width=final_clip.w,
+                                                               vertical_line_space=font_size // 5)
+                    clips_with_subtitles.extend(subtitle_clips)
 
         for word in filtered_words:
             if (length_str + len(word['alignedWord']) > 5 * self.config.subtitle_nb_word) \
