@@ -1,7 +1,7 @@
 # Auto Short/Reels/Tiktok Generator 🎬🤖
 
 ![Generated Short Example](https://github.com/MJP1998/Auto_short_generator/assets/64918024/1ad8e130-ec2c-40ba-8e0b-ecf8d0a14a75)
-> [Watch one of the generated videos](https://www.youtube.com/shorts/YW_zYfGuF8I)
+> [Watch one of the generated videos](https://www.instagram.com/reel/CxDMeHIIRYk/?utm_source=ig_web_copy_link&igshid=MzRlODBiNWFlZA==)
 
 ## Overview
 
