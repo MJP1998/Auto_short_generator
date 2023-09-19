@@ -251,7 +251,7 @@ def upload_to_tiktok(file_path, description, schedule=True, schedule_day="13", s
 
     # Send the path of the file to upload
     file_input.send_keys(os.path.abspath(file_path))
-    time.sleep(8)
+    time.sleep(10)
     # Locate the content-editable div
     content_editable_div = driver.find_element(By.XPATH, "//div[@data-contents='true']")
     # Clear the existing text
@@ -310,11 +310,11 @@ def upload_to_tiktok(file_path, description, schedule=True, schedule_day="13", s
         hour_element.click()
         # Find and click the element with the minute
         minute_element = driver.find_element(By.XPATH,
-                                             f"//div[contains(@class, 'tiktok-timepicker-option-item')]//span[contains(text(), '{minutes}')]")
+                                             f"//span[contains(@class, 'tiktok-timepicker-right') and contains(text(), '{minutes}')]")
         # Scroll the minute element into view
         driver.execute_script("arguments[0].scrollIntoView();", minute_element)
         # Wait for a moment (optional but recommended)
-        time.sleep(1)
+        time.sleep(2)
         # Click the minute element
         minute_element.click()
 
