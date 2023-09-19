@@ -93,10 +93,9 @@ class Media:
 
     def crop_to_aspect_ratio(self):
         """
-        Crop the clip to a specific aspect ratio by cutting equally from the top, bottom, left, and right.
+        Crop the clip to a specific aspect ratio by resizing and then cropping equally from the center.
 
         Parameters:
-        - clip: The original VideoFileClip
         - target_width: The target width
         - target_height: The target height
 
@@ -104,34 +103,33 @@ class Media:
         - A new VideoFileClip that has been cropped
         """
         target_width, target_height = self.final_clip_frame_size
-        # Calculate the aspect ratios
         target_aspect_ratio = target_width / target_height
         clip_aspect_ratio = self.clip.size[0] / self.clip.size[1]
 
-        # Calculate the new dimensions
+        # Decide which dimension to match first (width or height) based on aspect ratio
         if clip_aspect_ratio > target_aspect_ratio:
-            # Clip is too wide. Width will be reduced.
-            new_width = int(target_aspect_ratio * self.clip.size[1])
-            new_height = self.clip.size[1]
+            # Clip is too wide, match the height first
+            new_height = target_height
+            new_width = int(target_height * clip_aspect_ratio)
         else:
-            # Clip is too tall. Height will be reduced.
-            new_height = int(target_height / self.clip.size[0])
-            new_width = self.clip.size[0]
+            # Clip is too tall, match the width first
+            new_width = target_width
+            new_height = int(target_width / clip_aspect_ratio)
 
-        # Calculate the cropping boundaries
-        left_crop = (self.clip.size[0] - new_width) // 2
-        right_crop = self.clip.size[0] - new_width - left_crop
-        top_crop = (self.clip.size[1] - new_height) // 2
-        bottom_crop = self.clip.size[1] - new_height - top_crop
+        # Resize the clip
+        self.clip = self.clip.resize(height=new_height, width=new_width)
+
+        # Calculate cropping boundaries
+        left_crop = (new_width - target_width) // 2
+        top_crop = (new_height - target_height) // 2
 
         # Crop the clip
         self.clip = self.clip.crop(
-            x_center=self.clip.size[0] // 2,
-            y_center=self.clip.size[1] // 2,
-            width=self.clip.size[0] - left_crop - right_crop,
-            height=self.clip.size[1] - top_crop - bottom_crop
-        ).resize(height = self.final_clip_frame_size[1])
-
+            x1=left_crop,
+            y1=top_crop,
+            x2=left_crop + target_width,
+            y2=top_crop + target_height
+        )
 
     def trim(self, time):
         self.clip = self.clip.subclip(time)
