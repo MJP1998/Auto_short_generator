@@ -440,9 +440,10 @@ class VideoGeneration:
 
 if __name__ == "__main__":
     # Example image paths (you should provide actual paths to images in your resources folder)
-    image_paths = ["resources/images/test_1.jpg", "resources/images/test_2.jpg"]
+    image_paths = ["resources/medias/test_1.jpg", "resources/medias/test_2.jpg"]
 
     text = "Hello, this is a test script."
+    title = "Test Title"
     # tts = TextToSpeech()
     # audio_object = tts.get_audio(text)
     # Example audio data and file path (you should provide actual audio data and path)
@@ -452,6 +453,6 @@ if __name__ == "__main__":
     audio_object = Audio(audio_file_path)
     # Generate video
     video_gen = VideoGeneration()
-    video_file_path = video_gen.generate_video(audio_object, text, "generated_video")
+    video_file_path = video_gen.generate_video(audio_object, text, title, "generated_video")
 
     print(f"Generated video saved at {video_file_path}")
