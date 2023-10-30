@@ -31,6 +31,7 @@ One of the core philosophies behind this project is flexibility. We understand t
 
 - Python 3.x
 - ffmpeg
+- HTK Speech Recognition Toolkit
 
 ### Installation
 
